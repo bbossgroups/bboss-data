@@ -16,8 +16,8 @@ import static java.lang.Thread.sleep;
 
 public class RedisDB extends BeanInfoAware implements InitializingBean,org.frameworkset.spi.DisposableBean{
 	//	private ShardedJedisPool shardedJedispool;
+	private String name;
 	private JedisPool jedisPool;
-	private Map<String,String> properties;
 	private List<NodeInfo> nodes;
 	private String servers;
 	private static Logger logger = LoggerFactory.getLogger(RedisDB.class);
@@ -41,6 +41,17 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 	private int poolMaxTotal;
 	private long poolMaxWaitMillis;
 	private int maxIdle = -1;
+	private int minIdle = -1;
+
+	public Map<String, Object> getProperties() {
+		return properties;
+	}
+
+	public void setProperties(Map<String, Object> properties) {
+		this.properties = properties;
+	}
+
+	private Map<String,Object> properties;
 	/**
 	 * connectionTimeout
 	 */
@@ -69,6 +80,13 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 		// TODO Auto-generated constructor stub
 	}
 
+	public RedisDB addProperity(String name,Object value){
+		if(properties == null){
+			properties = new LinkedHashMap<>();
+		}
+		properties.put(name, value);
+		return this;
+	}
 	public int getMaxIdle() {
 		return maxIdle;
 	}
@@ -154,6 +172,8 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 //		config.setMaxWaitMillis(poolMaxWaitMillis);
 		if(maxIdle > 0)
 			config.setMaxIdle(maxIdle);
+		if(minIdle > 0)
+			config.setMinIdle(minIdle);
 		config.setTestOnBorrow(testOnBorrow);
 		config.setTestOnReturn(testOnReturn);
 		config.setTestWhileIdle(testWhileIdle);
@@ -321,12 +341,64 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 	public static void main(String[] args){
 		System.out.println("a\ra");
 	}
+	public String toString(){
+		StringBuilder builder = new StringBuilder();
+		builder.append("Redis datasourceName:")
+				.append(this.getName() != null?getName():this.getBeaninfo().getName())
+				.append(",servers:")
+				.append(servers)
+				.append(",auth:******,mode:")
+				.append(mode)
+				.append(",needAuthPerJedis:")
+				.append(needAuthPerJedis)
+				.append(",poolMaxTotal:")
+				.append(poolMaxTotal)
+				.append(",poolMaxWaitMillis:")
+				.append(poolMaxWaitMillis)
+				.append(",poolTimeoutRetry:")
+				.append(poolTimeoutRetry)
+				.append(",poolTimeoutRetryInterval:")
+				.append(poolTimeoutRetryInterval)
+				.append(",connectionTimeout:")
+				.append(connectionTimeout)
+				.append(",socketTimeout:")
+				.append(socketTimeout)
+				.append(",maxIdle:")
+				.append(maxIdle)
+				.append(",minIdle:")
+				.append(minIdle)
+				.append(",maxRedirections:")
+				.append(maxRedirections)
+				.append(",testOnBorrow:")
+				.append(testOnBorrow)
+				.append(",testOnReturn:")
+				.append(testOnReturn)
+				.append(",testWhileIdle:")
+				.append(testWhileIdle)
+				.append("properties:");
+		if(properties != null && properties.size() > 0){
+			Iterator<Map.Entry<String,Object>> iterator = properties.entrySet().iterator();
+			builder.append("{");
+			int i = 0;
+			while (iterator.hasNext()){
+				if(i > 0){
+					builder.append(",");
+				}
+				Map.Entry<String,Object> entry = iterator.next();
+				builder.append(entry.getKey())
+						.append(entry.getValue());
+
+				i ++;
+			}
+			builder.append("}");
+
+		}
+		return builder.toString();
+	}
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		if(logger.isInfoEnabled()) {
-			logger.info("Redis datasourceName:{},servers:{},auth:{},mode:{},needAuthPerJedis:{},poolMaxTotal:{},poolMaxWaitMillis:{},poolTimeoutRetry:{},poolTimeoutRetryInterval:{},timeout:{},soTimeout:{},maxIdle:{},maxRedirections:{},testOnBorrow:{},testOnReturn:{},testWhileIdle:{}",
-					this.getBeaninfo().getName(),servers, "******"/**auth*/, mode, needAuthPerJedis,poolMaxTotal,poolMaxWaitMillis,poolTimeoutRetry,
-					poolTimeoutRetryInterval,this.connectionTimeout,this.socketTimeout,this.maxIdle,this.maxRedirections,this.testOnBorrow,this.testOnReturn,this.testWhileIdle);
+			logger.info(toString());
 		}
 		if(this.nodes == null){
 			buildNodes();
@@ -401,5 +473,13 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 
 	public void setPoolTimeoutRetryInterval(long poolTimeoutRetryInterval) {
 		this.poolTimeoutRetryInterval = poolTimeoutRetryInterval;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 }

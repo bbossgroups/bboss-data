@@ -13,7 +13,40 @@ public class RedisFactory {
 	public static final String DEFAULT_REDIS_POOL = "default";
 	private static Map<String,RedisDB> dbs = new HashMap<String,RedisDB>();
 	private static ThreadLocal<RedisHelperHolder> currentDB = new ThreadLocal<RedisHelperHolder>();
- 
+
+	/**
+	 * 根据配置加载redis配置，初始redis客户端组件
+	 * @param redisConfig
+	 * @throws Exception
+	 */
+	public static void builRedisDB(RedisConfig redisConfig) throws Exception {
+		if(redisConfig != null && redisConfig.getName() != null && !dbs.containsKey(redisConfig.getName())){
+			synchronized (dbs) {
+				if(!dbs.containsKey(redisConfig.getName())) {
+					RedisDB redisDB = new RedisDB();
+					redisDB.setName(redisConfig.getName());
+					redisDB.setAuth(redisConfig.getAuth());
+					redisDB.setConnectionTimeout(redisConfig.getConnectionTimeout());
+					redisDB.setMaxIdle(redisConfig.getMinIdle());
+					redisDB.setMaxRedirections(redisConfig.getMaxRedirections());
+					redisDB.setMode(redisConfig.getMode());
+					redisDB.setPoolMaxTotal(redisConfig.getPoolMaxTotal());
+					redisDB.setPoolTimeoutRetry(redisConfig.getPoolTimeoutRetry());
+					redisDB.setPoolTimeoutRetryInterval(redisConfig.getPoolTimeoutRetryInterval());
+					redisDB.setPoolMaxWaitMillis(redisConfig.getPoolMaxWaitMillis());
+
+					redisDB.setServers(redisConfig.getServers());
+					redisDB.setSocketTimeout(redisConfig.getSocketTimeout());
+					redisDB.setTestOnBorrow(redisConfig.isTestOnBorrow());
+					redisDB.setTestOnReturn(redisConfig.isTestOnReturn());
+					redisDB.setTestWhileIdle(redisConfig.isTestWhileIdle());
+					redisDB.setProperties(redisConfig.getProperties());
+					redisDB.afterPropertiesSet();
+					dbs.put(redisConfig.getName(), redisDB);
+				}
+			}
+		}
+	}
 	static class RedisHelperHolder 
 	{
 		private int count;

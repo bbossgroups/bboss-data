@@ -17,7 +17,7 @@ https://esdoc.bbossgroups.com/#/bboss-build
 # 开发文档
 1. Redis 工具包，支持多redis集群操作
 
-https://www.iteye.com/blog/yin-bp-2287102
+https://doc.bbossgroups.com/#/redis
 
 2. Mongodb 
 

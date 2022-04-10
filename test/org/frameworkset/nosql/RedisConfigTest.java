@@ -59,7 +59,6 @@ public class RedisConfigTest {
 				.setTestWhileIdle(false)
 				.setProperties(new LinkedHashMap<>());
 		RedisFactory.builRedisDB(redisConfig);
-		RedisFactory.builRedisDB(redisConfig);
 
 	}
 	@Test

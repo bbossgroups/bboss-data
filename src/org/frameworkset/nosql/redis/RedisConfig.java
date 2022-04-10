@@ -39,14 +39,20 @@ public class RedisConfig {
 	 * 最大空闲数
 	 */
 	private int maxIdle = -1;
+	/**
+	 * 最小空闲数
+	 */
 	private int minIdle = -1;
+	/**
+	 *
+	 */
 	private int maxRedirections = 5;
 
 	private Map<String,Object> properties;
 	/**
 	 * single|cluster|shared
 	 */
-	private String mode = RedisDB.mode_single;
+	private String mode = RedisDB.mode_cluster;
 	private boolean needAuthPerJedis = false;
 	private int poolMaxTotal;
 	private long poolMaxWaitMillis;

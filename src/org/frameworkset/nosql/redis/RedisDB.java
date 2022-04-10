@@ -143,6 +143,14 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 		this.testWhileIdle = testWhileIdle;
 	}
 
+	public void setMinIdle(int minIdle) {
+		this.minIdle = minIdle;
+	}
+
+	public int getMinIdle() {
+		return minIdle;
+	}
+
 	/**
 
 	 public void startSharedPool() {
@@ -164,6 +172,7 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 
 	 }
 	 */
+
 	public void startSingleNode()
 	{
 		JedisPoolConfig config = new JedisPoolConfig();
@@ -314,7 +323,14 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 		if(this.servers != null ){
 			this.servers = servers.trim();
 			if(!this.servers.equals("")){
-				String _servers[] = servers.split("\n");
+				String _servers[] = null;
+				if(servers.indexOf(",") > 0){
+					_servers = servers.split(",");
+				}
+				else{
+					_servers = servers.split("\n");
+				}
+
 				for(int i = 0; i < _servers.length; i ++){
 					String server = _servers[i].trim();
 					if(server.equals("")){
@@ -375,7 +391,7 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 				.append(testOnReturn)
 				.append(",testWhileIdle:")
 				.append(testWhileIdle)
-				.append("properties:");
+				.append(",properties:");
 		if(properties != null && properties.size() > 0){
 			Iterator<Map.Entry<String,Object>> iterator = properties.entrySet().iterator();
 			builder.append("{");
@@ -398,7 +414,7 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		if(logger.isInfoEnabled()) {
-			logger.info(toString());
+			logger.info("Init Jedis["+toString()+"]");
 		}
 		if(this.nodes == null){
 			buildNodes();

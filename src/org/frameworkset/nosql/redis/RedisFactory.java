@@ -2,6 +2,8 @@ package org.frameworkset.nosql.redis;
 
 import org.frameworkset.spi.BaseApplicationContext;
 import org.frameworkset.spi.DefaultApplicationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
 import java.util.HashMap;
@@ -10,41 +12,65 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class RedisFactory {
+	private static Logger logger = LoggerFactory.getLogger(RedisFactory.class);
 	public static final String DEFAULT_REDIS_POOL = "default";
 	private static Map<String,RedisDB> dbs = new HashMap<String,RedisDB>();
 	private static ThreadLocal<RedisHelperHolder> currentDB = new ThreadLocal<RedisHelperHolder>();
 
+	private static void checkRedisConfig(RedisConfig redisConfig){
+		if(redisConfig.getName() == null || redisConfig.getName().equals("")){
+			throw new DataRedisException("Redis datasource name is null or empty:"+redisConfig.toString());
+		}
+		else if(redisConfig.getServers() == null || redisConfig.getServers().equals("")){
+			throw new DataRedisException("Redis datasource servers is null or empty:"+redisConfig.toString());
+		}
+	}
 	/**
 	 * 根据配置加载redis配置，初始redis客户端组件
 	 * @param redisConfig
 	 * @throws Exception
 	 */
-	public static void builRedisDB(RedisConfig redisConfig) throws Exception {
-		if(redisConfig != null && redisConfig.getName() != null && !dbs.containsKey(redisConfig.getName())){
-			synchronized (dbs) {
-				if(!dbs.containsKey(redisConfig.getName())) {
-					RedisDB redisDB = new RedisDB();
-					redisDB.setName(redisConfig.getName());
-					redisDB.setAuth(redisConfig.getAuth());
-					redisDB.setConnectionTimeout(redisConfig.getConnectionTimeout());
-					redisDB.setMaxIdle(redisConfig.getMinIdle());
-					redisDB.setMaxRedirections(redisConfig.getMaxRedirections());
-					redisDB.setMode(redisConfig.getMode());
-					redisDB.setPoolMaxTotal(redisConfig.getPoolMaxTotal());
-					redisDB.setPoolTimeoutRetry(redisConfig.getPoolTimeoutRetry());
-					redisDB.setPoolTimeoutRetryInterval(redisConfig.getPoolTimeoutRetryInterval());
-					redisDB.setPoolMaxWaitMillis(redisConfig.getPoolMaxWaitMillis());
+	public static void builRedisDB(RedisConfig redisConfig) throws DataRedisException {
+		if(redisConfig != null && redisConfig.getName() != null ){
+			if(!dbs.containsKey(redisConfig.getName())) {
+				synchronized (dbs) {
+					if (!dbs.containsKey(redisConfig.getName())) {
+						checkRedisConfig( redisConfig);
+						RedisDB redisDB = new RedisDB();
+						redisDB.setName(redisConfig.getName());
+						redisDB.setAuth(redisConfig.getAuth());
+						redisDB.setConnectionTimeout(redisConfig.getConnectionTimeout());
+						redisDB.setMaxIdle(redisConfig.getMaxIdle());
+						redisDB.setMinIdle(redisConfig.getMinIdle());
+						redisDB.setMaxRedirections(redisConfig.getMaxRedirections());
+						redisDB.setMode(redisConfig.getMode());
+						redisDB.setPoolMaxTotal(redisConfig.getPoolMaxTotal());
+						redisDB.setPoolTimeoutRetry(redisConfig.getPoolTimeoutRetry());
+						redisDB.setPoolTimeoutRetryInterval(redisConfig.getPoolTimeoutRetryInterval());
+						redisDB.setPoolMaxWaitMillis(redisConfig.getPoolMaxWaitMillis());
 
-					redisDB.setServers(redisConfig.getServers());
-					redisDB.setSocketTimeout(redisConfig.getSocketTimeout());
-					redisDB.setTestOnBorrow(redisConfig.isTestOnBorrow());
-					redisDB.setTestOnReturn(redisConfig.isTestOnReturn());
-					redisDB.setTestWhileIdle(redisConfig.isTestWhileIdle());
-					redisDB.setProperties(redisConfig.getProperties());
-					redisDB.afterPropertiesSet();
-					dbs.put(redisConfig.getName(), redisDB);
+						redisDB.setServers(redisConfig.getServers());
+						redisDB.setSocketTimeout(redisConfig.getSocketTimeout());
+						redisDB.setTestOnBorrow(redisConfig.isTestOnBorrow());
+						redisDB.setTestOnReturn(redisConfig.isTestOnReturn());
+						redisDB.setTestWhileIdle(redisConfig.isTestWhileIdle());
+						redisDB.setProperties(redisConfig.getProperties());
+						try {
+							redisDB.afterPropertiesSet();
+						} catch (Exception e) {
+							throw new DataRedisException("Init redis from redisconfig failed:" + redisConfig.toString(), e);
+						}
+						dbs.put(redisConfig.getName(), redisDB);
+					} else {
+						logger.warn("Ignore build existed JedisDatasource[{}]",redisConfig.toString());
+					}
+
 				}
 			}
+			else{
+				logger.warn("Ignore build existed JedisDatasource[{}]",redisConfig.toString());
+			}
+
 		}
 	}
 	static class RedisHelperHolder 

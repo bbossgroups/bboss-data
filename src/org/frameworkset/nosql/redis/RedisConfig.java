@@ -17,6 +17,7 @@ package org.frameworkset.nosql.redis;
 
 import redis.clients.jedis.Protocol;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -238,5 +239,60 @@ public class RedisConfig {
 	public RedisConfig setName(String name) {
 		this.name = name;
 		return this;
+	}
+
+	public String toString(){
+		StringBuilder builder = new StringBuilder();
+		builder.append("Redis datasourceName:")
+				.append(getName())
+				.append(",servers:")
+				.append(servers)
+				.append(",auth:******,mode:")
+				.append(mode)
+				.append(",needAuthPerJedis:")
+				.append(needAuthPerJedis)
+				.append(",poolMaxTotal:")
+				.append(poolMaxTotal)
+				.append(",poolMaxWaitMillis:")
+				.append(poolMaxWaitMillis)
+				.append(",poolTimeoutRetry:")
+				.append(poolTimeoutRetry)
+				.append(",poolTimeoutRetryInterval:")
+				.append(poolTimeoutRetryInterval)
+				.append(",connectionTimeout:")
+				.append(connectionTimeout)
+				.append(",socketTimeout:")
+				.append(socketTimeout)
+				.append(",maxIdle:")
+				.append(maxIdle)
+				.append(",minIdle:")
+				.append(minIdle)
+				.append(",maxRedirections:")
+				.append(maxRedirections)
+				.append(",testOnBorrow:")
+				.append(testOnBorrow)
+				.append(",testOnReturn:")
+				.append(testOnReturn)
+				.append(",testWhileIdle:")
+				.append(testWhileIdle)
+				.append(",properties:");
+		if(properties != null && properties.size() > 0){
+			Iterator<Map.Entry<String,Object>> iterator = properties.entrySet().iterator();
+			builder.append("{");
+			int i = 0;
+			while (iterator.hasNext()){
+				if(i > 0){
+					builder.append(",");
+				}
+				Map.Entry<String,Object> entry = iterator.next();
+				builder.append(entry.getKey())
+						.append(entry.getValue());
+
+				i ++;
+			}
+			builder.append("}");
+
+		}
+		return builder.toString();
 	}
 }

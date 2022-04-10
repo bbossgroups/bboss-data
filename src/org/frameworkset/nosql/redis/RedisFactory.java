@@ -62,13 +62,13 @@ public class RedisFactory {
 						}
 						dbs.put(redisConfig.getName(), redisDB);
 					} else {
-						logger.warn("Ignore build existed JedisDatasource[{}]",redisConfig.toString());
+						logger.warn("Ignore build existed RedisDatasource[{}]",redisConfig.toString());
 					}
 
 				}
 			}
 			else{
-				logger.warn("Ignore build existed JedisDatasource[{}]",redisConfig.toString());
+				logger.warn("Ignore build existed RedisDatasource[{}]",redisConfig.toString());
 			}
 
 		}
@@ -161,19 +161,28 @@ public class RedisFactory {
 	private static RedisDB init(String dbname,boolean init)
 	{
 		RedisDB db = dbs.get(dbname);
-		if(db == null && init)
+		if(db == null )
 		{
-			synchronized(RedisFactory.class)
-			{
-				db = dbs.get(dbname);
-				if(db == null)
-				{
-					BaseApplicationContext context = DefaultApplicationContext.getApplicationContext("redis.xml");
-					db = context.getTBeanObject(dbname, RedisDB.class);
-					dbs.put(dbname, db);
+			if(init) {
+				synchronized (RedisFactory.class) {
+					db = dbs.get(dbname);
+					if (db == null) {
+						BaseApplicationContext context = DefaultApplicationContext.getApplicationContext("redis.xml");
+						db = context.getTBeanObject(dbname, RedisDB.class);
+						dbs.put(dbname, db);
+					}
+					else{
+						logger.warn("Ignore build existed RedisDatasource[{}]",dbname);
+					}
+
 				}
-				
 			}
+			else{
+				logger.warn("RedisDatasource[{}] not exist.",dbname);
+			}
+		}
+		else{
+			logger.warn("Ignore build existed RedisDatasource[{}]",dbname);
 		}
 		return db;
 	}

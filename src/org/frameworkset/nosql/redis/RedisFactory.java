@@ -68,7 +68,7 @@ public class RedisFactory {
 				}
 			}
 			else{
-				logger.warn("Ignore build existed RedisDatasource[{}]",redisConfig.toString());
+//				logger.warn("Ignore build existed RedisDatasource[{}]",redisConfig.toString());
 			}
 
 		}
@@ -182,7 +182,7 @@ public class RedisFactory {
 			}
 		}
 		else{
-			logger.warn("Ignore build existed RedisDatasource[{}]",dbname);
+//			logger.warn("Ignore build existed RedisDatasource[{}]",dbname);
 		}
 		return db;
 	}

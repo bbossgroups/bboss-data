@@ -27,11 +27,29 @@ public class MongoDBHelper {
 			}
 		}
 	}
-	public static void init(MongoDBConfig mongoDBConfig){
-		MongoDB mongoDB = new MongoDB();
-		mongoDB.initWithConfig(mongoDBConfig);
-		mongoDB = mongoDB.getMongoClient();
-		mongoDBContainer.put(mongoDB.getName(),mongoDB);
+
+	public static boolean init(MongoDBConfig mongoDBConfig){
+		if(!mongoDBContainer.containsKey(mongoDBConfig.getName())) {
+			synchronized (mongoDBContainer) {
+				if(!mongoDBContainer.containsKey(mongoDBConfig.getName())) {
+					MongoDB mongoDB = new MongoDB();
+					mongoDB.initWithConfig(mongoDBConfig);
+					mongoDB = mongoDB.getMongoClient();
+					mongoDBContainer.put(mongoDB.getName(), mongoDB);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	public static void closeDB(String name){
+		synchronized (mongoDBContainer) {
+			MongoDB mongoDB = mongoDBContainer.get(name);
+			if (mongoDB != null) {
+				mongoDB.close();
+				mongoDBContainer.remove(name);
+			}
+		}
 	}
 	public static MongoDB getMongoClient(String name)
 	{

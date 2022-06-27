@@ -15,6 +15,8 @@ package org.frameworkset.nosql.redis;
  * limitations under the License.
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.ClusterPipeline;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.Pipeline;
@@ -39,6 +41,7 @@ import static org.frameworkset.nosql.redis.RedisFactory.DEFAULT_REDIS_POOL;
  * @version 1.0
  */
 public class RedisTool {
+	private static Logger logger = LoggerFactory.getLogger(RedisTool.class);
 	private String redisPoolName;
 	private boolean init;
 	private static RedisTool defaultRedisTool;
@@ -1026,6 +1029,16 @@ public class RedisTool {
 		{
 			if(redisHelper != null)
 				redisHelper.release();
+		}
+	}
+	public static void closePipeline(ClusterPipeline clusterPipeline){
+		try {
+			if(clusterPipeline != null) {
+				clusterPipeline.close();
+			}
+		}
+		catch (Exception e){
+			logger.error("close pipeline failed:",e);
 		}
 	}
 	/**
@@ -2772,6 +2785,16 @@ public class RedisTool {
 		{
 			if(redisHelper != null)
 				redisHelper.release();
+		}
+	}
+
+	public static void closePipeline(Pipeline pipeline){
+		try {
+			if(pipeline != null)
+				pipeline.close();
+		}
+		catch (Exception e){
+			logger.error("close pipeline failed:",e);
 		}
 	}
 }

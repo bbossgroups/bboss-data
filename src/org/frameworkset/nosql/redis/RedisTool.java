@@ -1014,32 +1014,25 @@ public class RedisTool {
 		}
 	}
 
-	/**
-	 * 集群模式下使用
-	 * @return
-	 */
-	public ClusterPipeline getClusterPipelined(){
-		RedisHelper redisHelper = null;
-		try
-		{
-			redisHelper = RedisFactory.getRedisHelper(redisPoolName,init);
-			return redisHelper.getClusterPipelined( );
-		}
-		finally
-		{
-			if(redisHelper != null)
-				redisHelper.release();
-		}
-	}
+//	/**
+//	 * 集群模式下使用
+//	 * @return
+//	 */
+//	public ClusterPipeline getClusterPipelined(){
+//		RedisHelper redisHelper = null;
+//		try
+//		{
+//			redisHelper = RedisFactory.getRedisHelper(redisPoolName,init);
+//			return redisHelper.getClusterPipelined( );
+//		}
+//		finally
+//		{
+//			if(redisHelper != null)
+//				redisHelper.release();
+//		}
+//	}
 	public static void closePipeline(ClusterPipeline clusterPipeline){
-		try {
-			if(clusterPipeline != null) {
-				clusterPipeline.close();
-			}
-		}
-		catch (Exception e){
-			logger.error("close pipeline failed:",e);
-		}
+		RedisHelper.closePipeline(clusterPipeline);
 	}
 	/**
 	 * Test for existence of a specified field in a hash. <b>Time complexity:</b> O(1)
@@ -2774,27 +2767,21 @@ public class RedisTool {
 		}
 	}
 
-	public Pipeline pipelined() {
-		RedisHelper redisHelper = null;
-		try
-		{
-			redisHelper = RedisFactory.getRedisHelper(redisPoolName,init);
-			return redisHelper.pipelined();
-		}
-		finally
-		{
-			if(redisHelper != null)
-				redisHelper.release();
-		}
-	}
+//	public Pipeline pipelined() {
+//		RedisHelper redisHelper = null;
+//		try
+//		{
+//			redisHelper = RedisFactory.getRedisHelper(redisPoolName,init);
+//			return redisHelper.pipelined();
+//		}
+//		finally
+//		{
+//			if(redisHelper != null)
+//				redisHelper.release();
+//		}
+//	}
 
 	public static void closePipeline(Pipeline pipeline){
-		try {
-			if(pipeline != null)
-				pipeline.close();
-		}
-		catch (Exception e){
-			logger.error("close pipeline failed:",e);
-		}
+		RedisHelper.closePipeline(pipeline);
 	}
 }

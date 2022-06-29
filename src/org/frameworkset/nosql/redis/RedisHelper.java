@@ -64,6 +64,8 @@ public class RedisHelper {
 
 	public void release()
 	{
+		closePipeline(pipeline);
+		closePipeline(clusterPipeline);
 //		if(shardedJedis != null)
 //			try {
 //				db.releaseSharedRedis(shardedJedis);
@@ -3607,10 +3609,15 @@ public class RedisHelper {
 //	    client.georadiusByMember(key, member, radius, unit, param);
 //	    return BuilderFactory.GEORADIUS_WITH_PARAMS_RESULT.build(client.getObjectMultiBulkReply());
 //	  }
+		private Pipeline pipeline;
 	  public Pipeline pipelined() {
 		  init();
-		  if(this.jedis != null)
-				return jedis.pipelined();
+		  if(pipeline != null)
+		  		return pipeline;
+		  if(this.jedis != null) {
+			  pipeline = jedis.pipelined();
+			  return pipeline;
+		  }
 		  else {
 
 
@@ -3619,16 +3626,18 @@ public class RedisHelper {
 
 
 	  }
-
+	private ClusterPipeline clusterPipeline;
 	/**
 	 * 集群模式下使用
 	 * @return
 	 */
 	public ClusterPipeline getClusterPipelined() {
 		init();
+		if(clusterPipeline != null)
+			return clusterPipeline;
 		try {
 
-			ClusterPipeline clusterPipeline = new ClusterPipeline(jc.getClusterConnectionProvider());
+			clusterPipeline = new ClusterPipeline(jc.getClusterConnectionProvider());
 			return clusterPipeline;
 		}
 		catch (Exception e){
@@ -3643,7 +3652,25 @@ public class RedisHelper {
 
 
 	}
-
+	public static void closePipeline(ClusterPipeline clusterPipeline){
+		try {
+			if(clusterPipeline != null) {
+				clusterPipeline.close();
+			}
+		}
+		catch (Exception e){
+			logger.error("close pipeline failed:",e);
+		}
+	}
+	public static void closePipeline(Pipeline pipeline){
+		try {
+			if(pipeline != null)
+				pipeline.close();
+		}
+		catch (Exception e){
+			logger.error("close pipeline failed:",e);
+		}
+	}
 
 	public Pipeline pipelined(int db) {
 		init();

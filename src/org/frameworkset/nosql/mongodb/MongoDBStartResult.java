@@ -15,6 +15,8 @@ package org.frameworkset.nosql.mongodb;
  * limitations under the License.
  */
 
+import org.frameworkset.util.ResourceStartResult;
+
 import java.util.Map;
 
 /**
@@ -25,19 +27,14 @@ import java.util.Map;
  * @author biaoping.yin
  * @version 1.0
  */
-public class MongoDBStartResult {
-	private Map<String,Object> dbstartResult;
+public class MongoDBStartResult extends ResourceStartResult {
 
 	public MongoDBStartResult addDBStartResult(String dbName){
-		if(dbstartResult == null){
-			dbstartResult = new java.util.LinkedHashMap<>();
-
-		}
-		dbstartResult.put(dbName,dbName);
+		addResourceStartResult(dbName);
 		return this;
 	}
 
 	public Map<String,Object> getDbstartResult() {
-		return dbstartResult;
+		return getResourceStartResult();
 	}
 }

@@ -1,7 +1,7 @@
 <properties>
 	<!-- 增加mongodb数据源配置和client工厂类 -->
 	<property name="default" factory-class="org.frameworkset.nosql.mongodb.MongoDB"
-		init-method="init" destroy-method="close" factory-method="getMongoClient">
+		init-method="init"  factory-method="getMongoClient">
 		
 		<!-- 这里不需要配置destroy-method，因为bboss持久层在jvm退出时会自动调用数据源的close方法 -->
 		<property name="serverAddresses" >

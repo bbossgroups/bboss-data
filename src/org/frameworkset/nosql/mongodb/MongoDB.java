@@ -3,6 +3,7 @@ package org.frameworkset.nosql.mongodb;
 import com.frameworkset.util.StringUtil;
 import com.mongodb.*;
 import com.mongodb.MongoClientOptions.Builder;
+import com.mongodb.client.MongoDatabase;
 import org.frameworkset.spi.BeanNameAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,7 @@ public class MongoDB implements BeanNameAware {
 //	private String option;
 //	private String writeConcern;
 //	private String readPreference;
-	private Mongo mongoclient;
+	private MongoClient mongoclient;
 //	private String mode = null;
 //	private boolean autoConnectRetry = true;
 //	private int connectionsPerHost = 500;
@@ -65,7 +66,7 @@ public class MongoDB implements BeanNameAware {
 		return this;
 	}
 	
-	public Mongo getMongo() {
+	public MongoClient getMongo() {
 
 		// try {
 		// Mongo mongoClient = new Mongo(Arrays.asList(new
@@ -641,7 +642,10 @@ public class MongoDB implements BeanNameAware {
 	public DB getDB(String dbname) {
 		return this.mongoclient.getDB(dbname);
 	}
-	
+
+	public MongoDatabase getMongoDatabase(String dbname) {
+		return this.mongoclient.getDatabase(dbname);
+	}
 	public  DBCollection getDBCollection(String dbname,String table)
 	{
 		DB db = this.getDB(dbname);

@@ -1,9 +1,21 @@
 package org.frameworkset.nosql.mongodb;
 
+import com.frameworkset.util.SimpleStringUtil;
 import com.frameworkset.util.StringUtil;
 import com.mongodb.*;
-import com.mongodb.MongoClientOptions.Builder;
+import com.mongodb.MongoClientSettings.Builder;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.*;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.InsertManyResult;
+import com.mongodb.client.result.UpdateResult;
+import com.mongodb.connection.ConnectionPoolSettings;
+import org.bson.BsonDocument;
+import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.frameworkset.spi.BeanNameAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,21 +24,23 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class MongoDB implements BeanNameAware {
-	private static Method autoConnectRetryMethod;
-	static {
-		try {
-			autoConnectRetryMethod = Builder.class.getMethod("autoConnectRetry", boolean.class);
-		} catch (NoSuchMethodException e) {
-			// // TODO Auto-generated catch block
-			// e.printStackTrace();
-		} catch (SecurityException e) {
-			// // TODO Auto-generated catch block
-			// e.printStackTrace();
-		}
-	}
+//	private static Method autoConnectRetryMethod;
+//	static {
+//		try {
+//			autoConnectRetryMethod = Builder.class.getMethod("autoConnectRetry", boolean.class);
+//		} catch (NoSuchMethodException e) {
+//			// // TODO Auto-generated catch block
+//			// e.printStackTrace();
+//		} catch (SecurityException e) {
+//			// // TODO Auto-generated catch block
+//			// e.printStackTrace();
+//		}
+//	}
 	private MongoDBConfig config;
 	private static Logger log = LoggerFactory.getLogger(MongoDB.class);
 //	private String serverAddresses;
@@ -101,8 +115,14 @@ public class MongoDB implements BeanNameAware {
 			trueaddresses.add(ad);
 			return trueaddresses;
 		}
+		String[] addresses = null;
+		if(serverAddresses.indexOf(",") > 0){
+			addresses = serverAddresses.split(",");
+		}
+		else{
+			addresses = serverAddresses.split("\n");
+		}
 
-		String[] addresses = serverAddresses.split("\n");
 		for (String address : addresses) {
 			address = address.trim();
 			String info[] = address.split(":");
@@ -112,53 +132,53 @@ public class MongoDB implements BeanNameAware {
 		return trueaddresses;
 	}
 
-	private int[] parserOption() throws NumberFormatException, UnknownHostException {
-		String option = this.getOption();
-		if (StringUtil.isEmpty(option))
-			return null;
-		option = option.trim();
-		String[] options = option.split("\r\n");
-		int[] ret = new int[options.length];
-		int i = 0;
-		for (String op : options) {
-			op = op.trim();
-			ret[i] = _getOption(op);
-			i++;
-		}
-		return ret;
-	}
+//	private int[] parserOption() throws NumberFormatException, UnknownHostException {
+//		String option = this.getOption();
+//		if (StringUtil.isEmpty(option))
+//			return null;
+//		option = option.trim();
+//		String[] options = option.split("\r\n");
+//		int[] ret = new int[options.length];
+//		int i = 0;
+//		for (String op : options) {
+//			op = op.trim();
+//			ret[i] = _getOption(op);
+//			i++;
+//		}
+//		return ret;
+//	}
 
-	private int _getOption(String op) {
-		if (op.equals("QUERYOPTION_TAILABLE"))
-			return Bytes.QUERYOPTION_TAILABLE;
-		else if (op.equals("QUERYOPTION_SLAVEOK"))
-			return Bytes.QUERYOPTION_SLAVEOK;
-		else if (op.equals("QUERYOPTION_OPLOGREPLAY"))
-			return Bytes.QUERYOPTION_OPLOGREPLAY;
-		else if (op.equals("QUERYOPTION_NOTIMEOUT"))
-			return Bytes.QUERYOPTION_NOTIMEOUT;
-
-		else if (op.equals("QUERYOPTION_AWAITDATA"))
-			return Bytes.QUERYOPTION_AWAITDATA;
-
-		else if (op.equals("QUERYOPTION_EXHAUST"))
-			return Bytes.QUERYOPTION_EXHAUST;
-
-		else if (op.equals("QUERYOPTION_PARTIAL"))
-			return Bytes.QUERYOPTION_PARTIAL;
-
-		else if (op.equals("RESULTFLAG_CURSORNOTFOUND"))
-			return Bytes.RESULTFLAG_CURSORNOTFOUND;
-		else if (op.equals("RESULTFLAG_ERRSET"))
-			return Bytes.RESULTFLAG_ERRSET;
-
-		else if (op.equals("RESULTFLAG_SHARDCONFIGSTALE"))
-			return Bytes.RESULTFLAG_SHARDCONFIGSTALE;
-		else if (op.equals("RESULTFLAG_AWAITCAPABLE"))
-			return Bytes.RESULTFLAG_AWAITCAPABLE;
-		throw new RuntimeException("未知的option:" + op);
-
-	}
+//	private int _getOption(String op) {
+//		if (op.equals("QUERYOPTION_TAILABLE"))
+//			return QUERYOPTION_TAILABLE;
+//		else if (op.equals("QUERYOPTION_SLAVEOK"))
+//			return QUERYOPTION_SLAVEOK;
+//		else if (op.equals("QUERYOPTION_OPLOGREPLAY"))
+//			return QUERYOPTION_OPLOGREPLAY;
+//		else if (op.equals("QUERYOPTION_NOTIMEOUT"))
+//			return QUERYOPTION_NOTIMEOUT;
+//
+//		else if (op.equals("QUERYOPTION_AWAITDATA"))
+//			return QUERYOPTION_AWAITDATA;
+//
+//		else if (op.equals("QUERYOPTION_EXHAUST"))
+//			return QUERYOPTION_EXHAUST;
+//
+//		else if (op.equals("QUERYOPTION_PARTIAL"))
+//			return QUERYOPTION_PARTIAL;
+//
+//		else if (op.equals("RESULTFLAG_CURSORNOTFOUND"))
+//			return RESULTFLAG_CURSORNOTFOUND;
+//		else if (op.equals("RESULTFLAG_ERRSET"))
+//			return RESULTFLAG_ERRSET;
+//
+//		else if (op.equals("RESULTFLAG_SHARDCONFIGSTALE"))
+//			return RESULTFLAG_SHARDCONFIGSTALE;
+//		else if (op.equals("RESULTFLAG_AWAITCAPABLE"))
+//			return RESULTFLAG_AWAITCAPABLE;
+//		throw new RuntimeException("未知的option:" + op);
+//
+//	}
 
 	public static void main(String[] args) {
 		String aa = "REPLICA_ACKNOWLEDGED(10)";
@@ -174,10 +194,10 @@ public class MongoDB implements BeanNameAware {
 		writeConcern = writeConcern.trim();
 		if (writeConcern.equals("NONE"))
 			return WriteConcern.UNACKNOWLEDGED;
-		else if (writeConcern.equals("NORMAL"))
-			return WriteConcern.NORMAL;
-		else if (writeConcern.equals("SAFE"))
-			return WriteConcern.SAFE;
+//		else if (writeConcern.equals("NORMAL"))
+//			return WriteConcern.NORMAL;
+//		else if (writeConcern.equals("SAFE"))
+//			return WriteConcern.SAFE;
 		else if (writeConcern.equals("MAJORITY"))
 			return WriteConcern.MAJORITY;
 		else if (writeConcern.equals("W1"))
@@ -186,42 +206,43 @@ public class MongoDB implements BeanNameAware {
 			return WriteConcern.W2;
 		else if (writeConcern.equals("W3"))
 			return WriteConcern.W3;
-		else if (writeConcern.equals("FSYNC_SAFE"))
-			return WriteConcern.FSYNC_SAFE;
+//		else if (writeConcern.equals("FSYNC_SAFE"))
+//			return WriteConcern.FSYNC_SAFE;
 		else if (writeConcern.equals("JOURNAL_SAFE"))
-			return WriteConcern.JOURNAL_SAFE;
+			return WriteConcern.JOURNALED;
 		else if (writeConcern.equals("JOURNALED"))
 			return WriteConcern.JOURNALED;
-		else if (writeConcern.equals("REPLICAS_SAFE"))
-			return WriteConcern.REPLICAS_SAFE;
-		else if (writeConcern.startsWith("REPLICA_ACKNOWLEDGED")) {
-			int idx = writeConcern.indexOf("(");
-			if (idx < 0) {
-				return WriteConcern.REPLICA_ACKNOWLEDGED;
-			} else {
-				String n = writeConcern.substring(idx + 1, writeConcern.length() - 1);
-				try {
-					if (n.indexOf(",") < 0) {
-						int N = Integer.parseInt(n);
-						return new WriteConcern(N);
-					} else {
-						String[] p = n.split(",");
-						n = p[0];
-						String _wtimeout = p[1];
-						int N = Integer.parseInt(n);
-						int wtimeout = Integer.parseInt(_wtimeout);
-						return new WriteConcern(N, wtimeout, false);
-					}
-				} catch (NumberFormatException e) {
-					return WriteConcern.REPLICA_ACKNOWLEDGED;
-				}
-			}
-		} else if (writeConcern.equals("ACKNOWLEDGED"))
+//		else if (writeConcern.equals("REPLICAS_SAFE"))
+//			return WriteConcern.REPLICAS_SAFE;
+//		else if (writeConcern.startsWith("REPLICA_ACKNOWLEDGED")) {
+//			int idx = writeConcern.indexOf("(");
+//			if (idx < 0) {
+//				return WriteConcern.REPLICA_ACKNOWLEDGED;
+//			} else {
+//				String n = writeConcern.substring(idx + 1, writeConcern.length() - 1);
+//				try {
+//					if (n.indexOf(",") < 0) {
+//						int N = Integer.parseInt(n);
+//						return new WriteConcern(N);
+//					} else {
+//						String[] p = n.split(",");
+//						n = p[0];
+//						String _wtimeout = p[1];
+//						int N = Integer.parseInt(n);
+//						int wtimeout = Integer.parseInt(_wtimeout);
+//						return new WriteConcern(N, wtimeout, false);
+//					}
+//				} catch (NumberFormatException e) {
+//					return WriteConcern.REPLICA_ACKNOWLEDGED;
+//				}
+//			}
+//		}
+		else if (writeConcern.equals("ACKNOWLEDGED"))
 			return WriteConcern.ACKNOWLEDGED;
 		else if (writeConcern.equals("UNACKNOWLEDGED"))
 			return WriteConcern.UNACKNOWLEDGED;
-		else if (writeConcern.equals("FSYNCED"))
-			return WriteConcern.FSYNCED;
+//		else if (writeConcern.equals("FSYNCED"))
+//			return WriteConcern.FSYNCED;
 		else if (writeConcern.equals("JOURNALED"))
 			return WriteConcern.JOURNALED;
 		else if (writeConcern.equals("ERRORS_IGNORED"))
@@ -262,10 +283,11 @@ public class MongoDB implements BeanNameAware {
 							clientMongoCredential.getDatabase(),
 							clientMongoCredential.getPassword().toCharArray()));
 				}
-				else if (clientMongoCredential.getMechanism().equals(MongoCredential.MONGODB_CR_MECHANISM)) {
-					mongoCredentials.add(MongoCredential.createMongoCRCredential(clientMongoCredential.getUserName(),
-							clientMongoCredential.getDatabase(), clientMongoCredential.getPassword().toCharArray()));
-				} else if (clientMongoCredential.getMechanism().equals(MongoCredential.PLAIN_MECHANISM)) {
+//				else if (clientMongoCredential.getMechanism().equals(MongoCredential.MONGODB_CR_MECHANISM)) {
+//					mongoCredentials.add(MongoCredential.createMongoCRCredential(clientMongoCredential.getUserName(),
+//							clientMongoCredential.getDatabase(), clientMongoCredential.getPassword().toCharArray()));
+//				}
+				else if (clientMongoCredential.getMechanism().equals(MongoCredential.PLAIN_MECHANISM)) {
 					mongoCredentials.add(MongoCredential.createPlainCredential(clientMongoCredential.getUserName(),
 							clientMongoCredential.getDatabase(), clientMongoCredential.getPassword().toCharArray()));
 				} else if (clientMongoCredential.getMechanism().equals(MongoCredential.MONGODB_X509_MECHANISM)) {
@@ -362,10 +384,57 @@ public class MongoDB implements BeanNameAware {
 		check();
 		return config.getConnectionsPerHost();
 	}
-
+	public int getMinSize() {
+		check();
+		return config.getMinSize();
+	}
+	public void setMinSize(int minSize) {
+		config.setMinSize(minSize);
+	}
 	public void setConnectionsPerHost(int connectionsPerHost) {
 		check();
 		this.config.setConnectionsPerHost(connectionsPerHost);
+	}
+
+	public long getMaxConnectionLifeTime() {
+		check();
+		return this.config.getMaxConnectionLifeTime();
+	}
+
+	public void setMaxConnectionLifeTime(long maxConnectionLifeTime) {
+
+		check();
+		 this.config.setMaxConnectionLifeTime( maxConnectionLifeTime);
+	}
+
+	public long getMaxConnectionIdleTime() {
+		check();
+		return this.config.getMaxConnectionIdleTime();
+	}
+
+	public void setMaxConnectionIdleTime(long maxConnectionIdleTime) {
+		check();
+		this.config.setMaxConnectionIdleTime( maxConnectionIdleTime);
+	}
+
+	public long getMaintenanceInitialDelay() {
+		check();
+		return this.config.getMaintenanceInitialDelay();
+	}
+
+	public void setMaintenanceInitialDelay(long maintenanceInitialDelay) {
+		check();
+		this.config.setMaintenanceInitialDelay( maintenanceInitialDelay);
+	}
+
+	public long getMaintenanceFrequency() {
+		check();
+		return this.config.getMaintenanceFrequency( );
+	}
+
+	public void setMaintenanceFrequency(long maintenanceFrequency) {
+		check();
+		this.config.setMaintenanceFrequency(maintenanceFrequency );
 	}
 
 	public int getMaxWaitTime() {
@@ -383,6 +452,24 @@ public class MongoDB implements BeanNameAware {
 		return config.getSocketTimeout();
 	}
 
+
+	public int getReceiveBufferSize() {
+		check();
+		return config.getReceiveBufferSize();
+	}
+
+	public void setReceiveBufferSize(int receiveBufferSize) {
+		config.setReceiveBufferSize(receiveBufferSize);
+	}
+
+	public int getSendBufferSize() {
+		check();
+		return config.getSendBufferSize();
+	}
+	public void setSendBufferSize(int sendBufferSize) {
+		check();
+		config.setSendBufferSize(  sendBufferSize);
+	}
 	public void setSocketTimeout(int socketTimeout) {
 		check();
 		this.config.setSocketTimeout(socketTimeout);
@@ -418,146 +505,106 @@ public class MongoDB implements BeanNameAware {
 		this.config.setSocketKeepAlive(socketKeepAlive);
 	}
 
+	private Builder builder(){
+		// Construct a ServerApi instance using the ServerApi.builder() method
+		ServerApi serverApi = ServerApi.builder()
+				.version(ServerApiVersion.V1)
+				.build();
+		Builder clientBuilder = MongoClientSettings.builder() ;
+		WriteConcern writeConcern = _getWriteConcern();
+		if(writeConcern != null)
+			clientBuilder.writeConcern(writeConcern);
+		String mode = this.getMode();
+		if (mode != null && !mode.equals("simple")) {
+			ReadPreference readPreference = _getReadPreference();
+			if (readPreference != null) {
+				clientBuilder.readPreference(readPreference);
+			}
+		}
+		clientBuilder.serverApi(serverApi);
+		this.buildCredentials();
+		if(mongoCredentials != null){
+			clientBuilder.credential(mongoCredentials.get(0));
+		}
+		clientBuilder.applyToConnectionPoolSettings(builder -> {
+			if(this.getMaxWaitTime() >= 0) {
+				builder.maxWaitTime(this.getMaxWaitTime(), TimeUnit.MILLISECONDS);
+			}
+			if(this.getConnectionsPerHost() >= 0 )
+				builder.maxSize(this.getConnectionsPerHost());
+			if(this.getMinSize() >= 0)
+				builder.maxSize(this.getMinSize());
+			if(this.getMaintenanceFrequency() > 0L)
+				builder.maintenanceFrequency(getMaintenanceFrequency(),TimeUnit.MILLISECONDS);
+			if(this.getMaintenanceInitialDelay() > 0L)
+				builder.maintenanceInitialDelay(getMaintenanceInitialDelay(),TimeUnit.MILLISECONDS);
+			if(this.getMaxConnectionIdleTime() > 0L)
+				builder.maxConnectionIdleTime(getMaxConnectionIdleTime(),TimeUnit.MILLISECONDS);
+			if(this.getMaxConnectionLifeTime() > 0L)
+				builder.maxConnectionLifeTime(getMaxConnectionLifeTime(),TimeUnit.MILLISECONDS);
+
+		});
+		clientBuilder.applyToSocketSettings(builder -> {
+			if(this.getConnectTimeout() > 0)
+				builder.connectTimeout(getConnectTimeout(),TimeUnit.MILLISECONDS);
+			if(this.getSocketTimeout() > 0){
+				builder.readTimeout(this.getSocketTimeout(),TimeUnit.MILLISECONDS);
+			}
+			if(this.getSendBufferSize() > 0)
+				builder.sendBufferSize(getSendBufferSize());
+			if(this.getReceiveBufferSize() > 0 )
+				builder.receiveBufferSize(this.getReceiveBufferSize());
+		});
+		return clientBuilder;
+	}
+
 	public void init() {
 		try {
-			buildCredentials();
-			String mode = this.getMode();
-			if (mode != null && mode.equals("simple")) {
-				this.initsimple();
-			} else {
 
-				// options.autoConnectRetry = autoConnectRetry;
-				// options.connectionsPerHost = connectionsPerHost;
-				// options.maxWaitTime = maxWaitTime;
-				// options.socketTimeout = socketTimeout;
-				// options.connectTimeout = connectTimeout;
-				// options.threadsAllowedToBlockForConnectionMultiplier =
-				// threadsAllowedToBlockForConnectionMultiplier;
-				// options.socketKeepAlive=socketKeepAlive;
-				Builder builder = MongoClientOptions.builder();
-				// builder.autoConnectRetry( autoConnectRetry);
-				_autoConnectRetry(builder, this.getAutoConnectRetry());
-				builder.connectionsPerHost(this.getConnectionsPerHost());
-				builder.maxWaitTime(this.getMaxWaitTime());
-				builder.socketTimeout(this.getSocketTimeout());
-				builder.connectTimeout(this.getConnectTimeout());
-				builder.threadsAllowedToBlockForConnectionMultiplier(this.getThreadsAllowedToBlockForConnectionMultiplier());
-				builder.socketKeepAlive(this.getSocketKeepAlive());
-				MongoClientOptions options = builder.build();// new
-																// MongoClientOptions();
-				MongoClient mongoClient = null;
+			if(log.isInfoEnabled()){
+				log.info("Init mongodb client config: {}",SimpleStringUtil.object2json(config));
+			}
+
+			if(SimpleStringUtil.isNotEmpty(config.getConnectString())){
+				Builder builder = builder();
+				builder.applyConnectionString(new ConnectionString(config.getConnectString()));
+
+				MongoClientSettings settings = builder.build();
+				// Create a new client and connect to the server
+				this.mongoclient =  MongoClients.create(settings);
+			}
+			else {
 				List<ServerAddress> servers = parserAddress();
-				if (mongoCredentials == null || mongoCredentials.size() == 0) {
-					if (servers.size() > 1)
-						mongoClient = new MongoClient(servers, options);
-					else
-						mongoClient = new MongoClient(servers.get(0), options);
-				} else {
-					if (servers.size() > 1)
-						mongoClient = new MongoClient(servers, mongoCredentials, options);
-					else
-						mongoClient = new MongoClient(servers.get(0), mongoCredentials, options);
-				}
-				int[] ops = parserOption();
-				for (int i = 0; ops != null && i < ops.length; i++)
-					mongoClient.addOption(ops[i]);
-				WriteConcern wc = this._getWriteConcern();
-				if (wc != null)
-					mongoClient.setWriteConcern(wc);
-				// ReadPreference.secondaryPreferred();
-				// if(servers.size() > 1)
-				{
-					ReadPreference rf = _getReadPreference();
-					if (rf != null)
-						mongoClient.setReadPreference(ReadPreference.nearest());
-				}
-				// mongoClient.setReadPreference(ReadPreference.primaryPreferred());
-				this.mongoclient = mongoClient;
+				Builder clientBuilder = builder();
+				clientBuilder.applyToClusterSettings(builder ->{
+						builder.hosts(servers);
+
+				});
+
+				MongoClientSettings settings = clientBuilder.build();
+				this.mongoclient = MongoClients.create(settings);
+
 			}
 		} catch (RuntimeException e) {
-			log.error("初始化mongodb client failed.", e);
+			log.error("初始化mongodb client failed:"+SimpleStringUtil.object2json(config), e);
 			throw e;
 
 		} catch (Exception e) {
-			log.error("初始化mongodb client failed.", e);
+			log.error("初始化mongodb client failed:"+SimpleStringUtil.object2json(config), e);
 			throw new RuntimeException(e);
 
 		}
 	}
 
-	private void _autoConnectRetry(Builder builder, boolean autoConnectRetry) {
-		if (autoConnectRetryMethod != null)
-			try {
-				autoConnectRetryMethod.invoke(builder, autoConnectRetry);
-			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvocationTargetException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	}
-
-	public void initsimple() throws Exception {
-		try {
-			// MongoOptions options = new MongoOptions();
-			// options.autoConnectRetry = autoConnectRetry;
-			// options.connectionsPerHost = connectionsPerHost;
-			// options.maxWaitTime = maxWaitTime;
-			// options.socketTimeout = socketTimeout;
-			// options.connectTimeout = connectTimeout;
-			// options.threadsAllowedToBlockForConnectionMultiplier =
-			// threadsAllowedToBlockForConnectionMultiplier;
-			// options.socketKeepAlive=socketKeepAlive;
-			// Mongo mongoClient = new Mongo(parserAddress().get(0),options);
-			Builder builder = MongoClientOptions.builder();
-			// builder.autoConnectRetry( autoConnectRetry);
-			_autoConnectRetry(builder, this.getAutoConnectRetry());
-			builder.connectionsPerHost(this.getConnectionsPerHost());
-			builder.maxWaitTime(this.getMaxWaitTime());
-			builder.socketTimeout(this.getSocketTimeout());
-			builder.connectTimeout(this.getConnectTimeout());
-			builder.threadsAllowedToBlockForConnectionMultiplier(this.getThreadsAllowedToBlockForConnectionMultiplier());
-			builder.socketKeepAlive(this.getSocketKeepAlive());
-			MongoClientOptions options = builder.build();// new
-															// MongoClientOptions();
-			MongoClient mongoClient = null;
-			if (mongoCredentials == null || mongoCredentials.size() == 0) {
-				mongoClient = new MongoClient(parserAddress().get(0), options);
-			} else {
-				mongoClient = new MongoClient(parserAddress().get(0), mongoCredentials, options);
-			}
-
-			int[] ops = parserOption();
-			for (int i = 0; ops != null && i < ops.length; i++)
-				mongoClient.addOption(ops[i]);
-			WriteConcern wc = this._getWriteConcern();
-			if (wc != null)
-				mongoClient.setWriteConcern(wc);
-			// ReadPreference.secondaryPreferred();
-
-			// mongoClient.setReadPreference(ReadPreference.primaryPreferred());
-			this.mongoclient = mongoClient;
-		} catch (RuntimeException e) {
-			throw e;
-
-		} catch (Exception e) {
-			throw e;
-
-		}
-	}
 
 	public void close() {
 		if (this.mongoclient != null)
 			this.mongoclient.close();
 	}
 
-	public static WriteResult update(DBCollection collection, DBObject q, DBObject o) {
+	public static <TDocument> UpdateResult replaceOne(MongoCollection<TDocument> collection, Bson filter, TDocument replacement) {
 		try {
-			WriteResult wr = collection.update(q, o);
+			UpdateResult wr = collection.replaceOne(filter, replacement);
 
 			return wr;
 		} catch (WriteConcernException e) {
@@ -565,18 +612,47 @@ public class MongoDB implements BeanNameAware {
 			return null;
 		}
 	}
+	public static UpdateResult updateMany(MongoCollection collection, Bson filter, Bson update) {
 
-	public static WriteResult update(DBCollection collection, DBObject q, DBObject o, WriteConcern concern) {
+		UpdateResult wr = collection.updateMany(filter, update);
 
-		WriteResult wr = collection.update(q, o, false, false, concern);
+		return wr;
+
+	}
+	public static UpdateResult updateMany(MongoCollection collection, Bson filter, Bson update, UpdateOptions concern) {
+
+		UpdateResult wr = collection.updateMany(filter, update,  concern);
 
 		return wr;
 
 	}
 
-	public static DBObject findAndModify(DBCollection collection, DBObject query, DBObject update) {
+	public static UpdateResult updateOne(MongoCollection collection, Bson filter, Bson update) {
+
+		UpdateResult wr = collection.updateOne(filter, update);
+
+		return wr;
+
+	}
+	public static UpdateResult updateOne(MongoCollection collection, Bson filter, Bson update, UpdateOptions concern) {
+
+		UpdateResult wr = collection.updateOne(filter, update,  concern);
+
+		return wr;
+
+	}
+	public static <TDocument> TDocument findAndModify(MongoCollection<TDocument> collection, Bson query, Bson update, FindOneAndUpdateOptions options) {
 		try {
-			DBObject object = collection.findAndModify(query, update);
+			TDocument object = collection.findOneAndUpdate(query, update,options);
+			return object;
+		} catch (WriteConcernException e) {
+			log.debug("findAndModify:", e);
+			return null;
+		}
+	}
+	public static <TDocument> TDocument findAndModify(MongoCollection<TDocument> collection, Bson query, Bson update) {
+		try {
+			TDocument object = collection.findOneAndUpdate(query, update);
 			return object;
 		} catch (WriteConcernException e) {
 			log.debug("findAndModify:", e);
@@ -584,9 +660,11 @@ public class MongoDB implements BeanNameAware {
 		}
 	}
 
-	public static DBObject findAndRemove(DBCollection collection, DBObject query) {
+
+
+	public static <TDocument> TDocument findAndRemove(MongoCollection<TDocument> collection, Bson query) {
 		try {
-			DBObject object = collection.findAndRemove(query);
+			TDocument object = collection.findOneAndDelete(query);
 			return object;
 		} catch (WriteConcernException e) {
 			log.debug("findAndRemove:", e);
@@ -594,61 +672,66 @@ public class MongoDB implements BeanNameAware {
 		}
 	}
 
-	public static WriteResult insert(DBCollection collection, DBObject... arr) {
 
-		try {
-			return collection.insert(arr);
-		} catch (WriteConcernException e) {
-			log.debug("insert:", e);
+
+	public static <TDocument> InsertManyResult insert( MongoCollection<TDocument> collection, TDocument... documents) {
+
+		if(documents == null)
 			return null;
-		}
-	}
-	
-	public static WriteResult insert(DBCollection collection, List<? extends DBObject> arr) {
+		List<TDocument> tDocuments = Arrays.asList(documents);
+		return collection.insertMany(tDocuments);
 
-		try {
-			return collection.insert(arr);
-		} catch (WriteConcernException e) {
-			log.debug("insert:", e);
+	}
+
+	public static <TDocument> InsertManyResult insert( MongoCollection<TDocument> collection, List<? extends TDocument> documents) {
+
+		return collection.insertMany(documents);
+
+	}
+
+
+	public static <TDocument> InsertManyResult insert(InsertManyOptions concern, MongoCollection<TDocument> collection, TDocument... documents) {
+
+		if(documents == null)
 			return null;
-		}
-	}
-
-	public static WriteResult insert(WriteConcern concern, DBCollection collection, DBObject... arr) {
-
-		return collection.insert(arr, concern);
+		List<TDocument> tDocuments = Arrays.asList(documents);
+		return collection.insertMany(tDocuments, concern);
 
 	}
-	
-	public static WriteResult insert(WriteConcern concern, DBCollection collection, List<? extends DBObject> arr) {
+	public static <TDocument> InsertManyResult insert(InsertManyOptions concern, MongoCollection<TDocument> collection, List<? extends TDocument> documents) {
 
-		return collection.insert(arr, concern);
+		return collection.insertMany(documents, concern);
 
 	}
 
-	public static WriteResult remove(DBCollection collection, DBObject o) {
-		try {
-			return collection.remove(o);
-		} catch (WriteConcernException e) {
-			log.debug("remove:", e);
-			return null;
-		}
+	public static DeleteResult remove(MongoCollection collection, Bson filter) {
+		return collection.deleteOne(filter);
 	}
 
-	public static WriteResult remove(DBCollection collection, DBObject o, WriteConcern concern) {
-		return collection.remove(o, concern);
+
+	public static DeleteResult remove(MongoCollection collection, Bson filter, DeleteOptions concern) {
+
+		return collection.deleteOne(filter,concern);
+	}
+	public static DeleteResult removeMany(MongoCollection collection, Bson filter) {
+		return collection.deleteMany(filter);
 	}
 
-	public DB getDB(String dbname) {
-		return this.mongoclient.getDB(dbname);
+
+	public static DeleteResult removeMany(MongoCollection collection, Bson filter, DeleteOptions concern) {
+
+		return collection.deleteMany(filter,concern);
+	}
+	public MongoDatabase getDB(String dbname) {
+		return this.mongoclient.getDatabase(dbname);
 	}
 
 	public MongoDatabase getMongoDatabase(String dbname) {
 		return this.mongoclient.getDatabase(dbname);
 	}
-	public  DBCollection getDBCollection(String dbname,String table)
+	public  MongoCollection getDBCollection(String dbname,String table)
 	{
-		DB db = this.getDB(dbname);
+		MongoDatabase db = this.getMongoDatabase(dbname);
 		return db.getCollection(table);
 		
 	}

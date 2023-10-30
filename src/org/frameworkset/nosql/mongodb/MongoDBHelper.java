@@ -1,8 +1,10 @@
 package org.frameworkset.nosql.mongodb;
 
 import com.frameworkset.util.StringUtil;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 import org.frameworkset.spi.BaseApplicationContext;
 import org.frameworkset.spi.DefaultApplicationContext;
 import org.slf4j.Logger;
@@ -120,22 +122,22 @@ public class MongoDBHelper {
 	
 
 	
-	public static DB getDB(String poolname,String dbname)
+	public static MongoDatabase getDB(String poolname, String dbname)
 	{
 		return getMongoDB(poolname).getDB( dbname );
 	}
-	public static DB getDB(String dbname)
+	public static MongoDatabase getDB(String dbname)
 	{
 		return getDB(defaultMongoDB,dbname);
 		
 	}
 	
 	
-	public static DBCollection getDBCollection(String poolname,String dbname,String table)
+	public static MongoCollection<Document> getDBCollection(String poolname, String dbname, String table)
 	{
 		return getMongoDB(poolname).getDB( dbname ).getCollection(table);
 	}
-	public static DBCollection getDBCollection(String dbname,String table)
+	public static MongoCollection<Document> getDBCollection(String dbname,String table)
 	{
 		return getDBCollection(defaultMongoDB,dbname,table);
 		

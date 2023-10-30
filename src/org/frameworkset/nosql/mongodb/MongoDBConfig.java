@@ -34,11 +34,20 @@ public class MongoDBConfig {
 	private String readPreference;
 	private Boolean autoConnectRetry = true;
 
-	private int connectionsPerHost = 50;
-
+	private int connectionsPerHost = 100;
+	private int minSize = 100;
+	private long maintenanceFrequency;
+	private long maintenanceInitialDelay;
+	private long maxConnectionIdleTime;
+	private long maxConnectionLifeTime;
 	private int maxWaitTime = 120000;
 	private int socketTimeout = 0;
 	private int connectTimeout = 15000;
+	private int receiveBufferSize;
+	private int sendBufferSize;
+
+
+	private String connectString;
 
 	public List<ClientMongoCredential> getCredentials() {
 		return credentials;
@@ -159,5 +168,70 @@ public class MongoDBConfig {
 
 	public void setMode(String mode) {
 		this.mode = mode;
+	}
+
+
+	public String getConnectString() {
+		return connectString;
+	}
+
+	public void setConnectString(String connectString) {
+		this.connectString = connectString;
+	}
+
+	public int getMinSize() {
+		return minSize;
+	}
+
+	public void setMinSize(int minSize) {
+		this.minSize = minSize;
+	}
+
+	public int getReceiveBufferSize() {
+		return receiveBufferSize;
+	}
+
+	public void setReceiveBufferSize(int receiveBufferSize) {
+		this.receiveBufferSize = receiveBufferSize;
+	}
+
+	public int getSendBufferSize() {
+		return sendBufferSize;
+	}
+
+	public void setSendBufferSize(int sendBufferSize) {
+		this.sendBufferSize = sendBufferSize;
+	}
+
+	public long getMaxConnectionLifeTime() {
+		return maxConnectionLifeTime;
+	}
+
+	public void setMaxConnectionLifeTime(long maxConnectionLifeTime) {
+		this.maxConnectionLifeTime = maxConnectionLifeTime;
+	}
+
+	public long getMaxConnectionIdleTime() {
+		return maxConnectionIdleTime;
+	}
+
+	public void setMaxConnectionIdleTime(long maxConnectionIdleTime) {
+		this.maxConnectionIdleTime = maxConnectionIdleTime;
+	}
+
+	public long getMaintenanceInitialDelay() {
+		return maintenanceInitialDelay;
+	}
+
+	public void setMaintenanceInitialDelay(long maintenanceInitialDelay) {
+		this.maintenanceInitialDelay = maintenanceInitialDelay;
+	}
+
+	public long getMaintenanceFrequency() {
+		return maintenanceFrequency;
+	}
+
+	public void setMaintenanceFrequency(long maintenanceFrequency) {
+		this.maintenanceFrequency = maintenanceFrequency;
 	}
 }

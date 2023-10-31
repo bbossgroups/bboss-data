@@ -744,4 +744,17 @@ public class MongoDB implements BeanNameAware {
 		this.check();
 		this.config.setName(name);
 	}
+
+	public String getConnectString() {
+		if(config != null)
+			return config.getConnectString();
+		else{
+			return null;
+		}
+	}
+
+	public void setConnectString(String connectString) {
+		this.check();
+		this.config.setConnectString(connectString);
+	}
 }

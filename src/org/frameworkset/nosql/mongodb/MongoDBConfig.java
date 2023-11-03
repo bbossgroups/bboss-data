@@ -32,7 +32,6 @@ public class MongoDBConfig {
 	private String option;
 	private String writeConcern;
 	private String readPreference;
-	private Boolean autoConnectRetry = true;
 
 	private int connectionsPerHost = 100;
 	private int minSize = 100;
@@ -59,8 +58,6 @@ public class MongoDBConfig {
 
 	private List<ClientMongoCredential> credentials;
 
-	/**是否启用sql日志，true启用，false 不启用，*/
-	private int threadsAllowedToBlockForConnectionMultiplier = 5;
 	private Boolean socketKeepAlive = false;
 
 	private String mode;
@@ -106,13 +103,6 @@ public class MongoDBConfig {
 		this.readPreference = readPreference;
 	}
 
-	public Boolean getAutoConnectRetry() {
-		return autoConnectRetry;
-	}
-
-	public void setAutoConnectRetry(Boolean autoConnectRetry) {
-		this.autoConnectRetry = autoConnectRetry;
-	}
 
 	public int getConnectionsPerHost() {
 		return connectionsPerHost;
@@ -146,13 +136,6 @@ public class MongoDBConfig {
 		this.connectTimeout = connectTimeout;
 	}
 
-	public int getThreadsAllowedToBlockForConnectionMultiplier() {
-		return threadsAllowedToBlockForConnectionMultiplier;
-	}
-
-	public void setThreadsAllowedToBlockForConnectionMultiplier(int threadsAllowedToBlockForConnectionMultiplier) {
-		this.threadsAllowedToBlockForConnectionMultiplier = threadsAllowedToBlockForConnectionMultiplier;
-	}
 
 	public Boolean getSocketKeepAlive() {
 		return socketKeepAlive;

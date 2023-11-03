@@ -370,15 +370,6 @@ public class MongoDB implements BeanNameAware {
 		this.config.setReadPreference(readPreference);
 	}
 
-	public Boolean getAutoConnectRetry() {
-		check();
-		return config.getAutoConnectRetry();
-	}
-
-	public void setAutoConnectRetry(Boolean autoConnectRetry) {
-		check();
-		this.config.setAutoConnectRetry(autoConnectRetry);
-	}
 
 	public int getConnectionsPerHost() {
 		check();
@@ -485,15 +476,7 @@ public class MongoDB implements BeanNameAware {
 		this.config.setConnectTimeout(connectTimeout);
 	}
 
-	public int getThreadsAllowedToBlockForConnectionMultiplier() {
-		check();
-		return config.getThreadsAllowedToBlockForConnectionMultiplier();
-	}
 
-	public void setThreadsAllowedToBlockForConnectionMultiplier(int threadsAllowedToBlockForConnectionMultiplier) {
-		check();
-		this.config.setThreadsAllowedToBlockForConnectionMultiplier(threadsAllowedToBlockForConnectionMultiplier);
-	}
 
 	public Boolean getSocketKeepAlive() {
 		check();

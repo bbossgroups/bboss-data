@@ -15,6 +15,9 @@ package org.frameworkset.nosql.mongodb;
  * limitations under the License.
  */
 
+import com.frameworkset.util.SimpleStringUtil;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -47,16 +50,79 @@ public class MongoDBConfig {
 
 
 	private String connectString;
+	private String userName;
+	private String password;
+	private String mechanism;
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public MongoDBConfig setUserName(String userName) {
+		this.userName = userName;
+		return this;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public MongoDBConfig setPassword(String password) {
+		this.password = password;
+		return this;
+	}
+
+	public String getMechanism() {
+		return mechanism;
+	}
+
+	/**
+	 * MONGODB-AWS
+	 * GSSAPI
+	 * PLAIN
+	 * MONGODB_X509
+	 * SCRAM-SHA-1
+	 * SCRAM-SHA-256
+	 */
+	public MongoDBConfig setMechanism(String mechanism) {
+		this.mechanism = mechanism;
+		return this;
+	}
 
 	public List<ClientMongoCredential> getCredentials() {
 		return credentials;
 	}
 
-	public void setCredentials(List<ClientMongoCredential> credentials) {
+	private boolean builded;
+	public void build(){
+		if(builded)
+			return;
+		builded = true;
+		if(SimpleStringUtil.isNotEmpty(userName) && SimpleStringUtil.isNotEmpty(password))
+		if (credentials == null || credentials.size() == 0) {
+			if(credentials == null)
+				credentials = new ArrayList<ClientMongoCredential>();
+
+			ClientMongoCredential clientMongoCredential = new ClientMongoCredential();
+			if(SimpleStringUtil.isNotEmpty(authDb)) {
+				clientMongoCredential.setDatabase(authDb);
+			}
+			if(SimpleStringUtil.isNotEmpty(mechanism))
+				clientMongoCredential.setMechanism(mechanism);
+			clientMongoCredential.setUserName(userName);
+			clientMongoCredential.setPassword(password);
+			credentials.add(clientMongoCredential);
+		}
+	}
+	public MongoDBConfig setCredentials(List<ClientMongoCredential> credentials) {
 		this.credentials = credentials;
+		return this;
 	}
 
 	private List<ClientMongoCredential> credentials;
+
+
+	private String authDb;
 
 	private Boolean socketKeepAlive = false;
 
@@ -67,40 +133,45 @@ public class MongoDBConfig {
 		return name;
 	}
 
-	public void setName(String name) {
+	public MongoDBConfig setName(String name) {
 		this.name = name;
+		return this;
 	}
 
 	public String getServerAddresses() {
 		return serverAddresses;
 	}
 
-	public void setServerAddresses(String serverAddresses) {
+	public MongoDBConfig setServerAddresses(String serverAddresses) {
 		this.serverAddresses = serverAddresses;
+		return this;
 	}
 
 	public String getOption() {
 		return option;
 	}
 
-	public void setOption(String option) {
+	public MongoDBConfig setOption(String option) {
 		this.option = option;
+		return this;
 	}
 
 	public String getWriteConcern() {
 		return writeConcern;
 	}
 
-	public void setWriteConcern(String writeConcern) {
+	public MongoDBConfig setWriteConcern(String writeConcern) {
 		this.writeConcern = writeConcern;
+		return this;
 	}
 
 	public String getReadPreference() {
 		return readPreference;
 	}
 
-	public void setReadPreference(String readPreference) {
+	public MongoDBConfig setReadPreference(String readPreference) {
 		this.readPreference = readPreference;
+		return this;
 	}
 
 
@@ -108,32 +179,36 @@ public class MongoDBConfig {
 		return connectionsPerHost;
 	}
 
-	public void setConnectionsPerHost(int connectionsPerHost) {
+	public MongoDBConfig setConnectionsPerHost(int connectionsPerHost) {
 		this.connectionsPerHost = connectionsPerHost;
+		return this;
 	}
 
 	public int getMaxWaitTime() {
 		return maxWaitTime;
 	}
 
-	public void setMaxWaitTime(int maxWaitTime) {
+	public MongoDBConfig setMaxWaitTime(int maxWaitTime) {
 		this.maxWaitTime = maxWaitTime;
+		return this;
 	}
 
 	public int getSocketTimeout() {
 		return socketTimeout;
 	}
 
-	public void setSocketTimeout(int socketTimeout) {
+	public MongoDBConfig setSocketTimeout(int socketTimeout) {
 		this.socketTimeout = socketTimeout;
+		return this;
 	}
 
 	public int getConnectTimeout() {
 		return connectTimeout;
 	}
 
-	public void setConnectTimeout(int connectTimeout) {
+	public MongoDBConfig setConnectTimeout(int connectTimeout) {
 		this.connectTimeout = connectTimeout;
+		return this;
 	}
 
 
@@ -141,16 +216,18 @@ public class MongoDBConfig {
 		return socketKeepAlive;
 	}
 
-	public void setSocketKeepAlive(Boolean socketKeepAlive) {
+	public MongoDBConfig setSocketKeepAlive(Boolean socketKeepAlive) {
 		this.socketKeepAlive = socketKeepAlive;
+		return this;
 	}
 
 	public String getMode() {
 		return mode;
 	}
 
-	public void setMode(String mode) {
+	public MongoDBConfig setMode(String mode) {
 		this.mode = mode;
+		return this;
 	}
 
 
@@ -158,63 +235,81 @@ public class MongoDBConfig {
 		return connectString;
 	}
 
-	public void setConnectString(String connectString) {
+	public MongoDBConfig setConnectString(String connectString) {
 		this.connectString = connectString;
+		return this;
 	}
 
 	public int getMinSize() {
 		return minSize;
 	}
 
-	public void setMinSize(int minSize) {
+	public MongoDBConfig setMinSize(int minSize) {
 		this.minSize = minSize;
+		return this;
 	}
 
 	public int getReceiveBufferSize() {
 		return receiveBufferSize;
 	}
 
-	public void setReceiveBufferSize(int receiveBufferSize) {
+	public MongoDBConfig setReceiveBufferSize(int receiveBufferSize) {
 		this.receiveBufferSize = receiveBufferSize;
+		return this;
 	}
 
 	public int getSendBufferSize() {
 		return sendBufferSize;
 	}
 
-	public void setSendBufferSize(int sendBufferSize) {
+	public MongoDBConfig setSendBufferSize(int sendBufferSize) {
 		this.sendBufferSize = sendBufferSize;
+		return this;
 	}
 
 	public long getMaxConnectionLifeTime() {
 		return maxConnectionLifeTime;
 	}
 
-	public void setMaxConnectionLifeTime(long maxConnectionLifeTime) {
+	public MongoDBConfig setMaxConnectionLifeTime(long maxConnectionLifeTime) {
 		this.maxConnectionLifeTime = maxConnectionLifeTime;
+		return this;
 	}
 
 	public long getMaxConnectionIdleTime() {
 		return maxConnectionIdleTime;
 	}
 
-	public void setMaxConnectionIdleTime(long maxConnectionIdleTime) {
+	public MongoDBConfig setMaxConnectionIdleTime(long maxConnectionIdleTime) {
 		this.maxConnectionIdleTime = maxConnectionIdleTime;
+		return this;
 	}
 
 	public long getMaintenanceInitialDelay() {
 		return maintenanceInitialDelay;
 	}
 
-	public void setMaintenanceInitialDelay(long maintenanceInitialDelay) {
+	public MongoDBConfig setMaintenanceInitialDelay(long maintenanceInitialDelay) {
 		this.maintenanceInitialDelay = maintenanceInitialDelay;
+		return this;
 	}
 
 	public long getMaintenanceFrequency() {
 		return maintenanceFrequency;
 	}
 
-	public void setMaintenanceFrequency(long maintenanceFrequency) {
+	public MongoDBConfig setMaintenanceFrequency(long maintenanceFrequency) {
 		this.maintenanceFrequency = maintenanceFrequency;
+		return this;
+	}
+
+
+	public String getAuthDb() {
+		return authDb;
+	}
+
+	public MongoDBConfig setAuthDb(String authDb) {
+		this.authDb = authDb;
+		return this;
 	}
 }

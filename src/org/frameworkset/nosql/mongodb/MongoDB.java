@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.mongodb.AuthenticationMechanism.*;
+
 public class MongoDB implements BeanNameAware {
 //	private static Method autoConnectRetryMethod;
 //	static {
@@ -268,8 +270,57 @@ public class MongoDB implements BeanNameAware {
 		throw new RuntimeException("未知的ReadPreference:" + readPreference);
 	}
 
+	/**
+	 * MONGODB-AWS
+	 * GSSAPI
+	 * PLAIN
+	 * MONGODB_X509
+	 * SCRAM-SHA-1
+	 * SCRAM-SHA-256
+	 */
 	private void buildCredentials() {
 
+
+//		/**
+//		 * The GSSAPI mechanism.  See the <a href="http://tools.ietf.org/html/rfc4752">RFC</a>.
+//		 *
+//		 * @mongodb.driver.manual core/authentication/#kerberos-authentication GSSAPI
+//		 */
+//		public static final String GSSAPI_MECHANISM = GSSAPI.getMechanismName();
+//
+//		/**
+//		 * The PLAIN mechanism.  See the <a href="http://www.ietf.org/rfc/rfc4616.txt">RFC</a>.
+//		 *
+//		 * @since 2.12
+//		 * @mongodb.driver.manual core/authentication/#ldap-proxy-authority-authentication PLAIN
+//		 */
+//		public static final String PLAIN_MECHANISM = PLAIN.getMechanismName();
+//
+//		/**
+//		 * The MongoDB X.509
+//		 *
+//		 * @since 2.12
+//		 * @mongodb.driver.manual core/authentication/#x-509-certificate-authentication X-509
+//		 */
+//		public static final String MONGODB_X509_MECHANISM = MONGODB_X509.getMechanismName();
+//
+//		/**
+//		 * The SCRAM-SHA-1 Mechanism.
+//		 *
+//		 * @since 2.13
+//		 * @mongodb.server.release 3.0
+//		 * @mongodb.driver.manual core/authentication/#authentication-scram-sha-1 SCRAM-SHA-1
+//		 */
+//		public static final String SCRAM_SHA_1_MECHANISM = SCRAM_SHA_1.getMechanismName();
+
+//		/**
+//		 * The SCRAM-SHA-256 Mechanism.
+//		 *
+//		 * @since 3.8
+//		 * @mongodb.server.release 4.0
+//		 * @mongodb.driver.manual core/authentication/#authentication-scram-sha-256 SCRAM-SHA-256
+//		 */
+//		public static final String SCRAM_SHA_256_MECHANISM = SCRAM_SHA_256.getMechanismName();
 		if (config.getCredentials() != null && config.getCredentials().size() > 0) {
 			this.mongoCredentials = new ArrayList<MongoCredential>();
 			for (ClientMongoCredential clientMongoCredential : config.getCredentials()) {
@@ -278,8 +329,13 @@ public class MongoDB implements BeanNameAware {
 							clientMongoCredential.getDatabase(),
 							clientMongoCredential.getPassword().toCharArray()));
 				}
-				else  if (clientMongoCredential.getMechanism().equals(MongoCredential.SCRAM_SHA_1_MECHANISM)) {
+				else  if (clientMongoCredential.getMechanism().equals(MongoCredential.SCRAM_SHA_1_MECHANISM)) {//    SCRAM_SHA_256("SCRAM-SHA-256");
 					mongoCredentials.add(MongoCredential.createScramSha1Credential(clientMongoCredential.getUserName(),
+							clientMongoCredential.getDatabase(),
+							clientMongoCredential.getPassword().toCharArray()));
+				}
+				else  if (clientMongoCredential.getMechanism().equals(MongoCredential.SCRAM_SHA_256_MECHANISM)) {//    SCRAM_SHA_256("SCRAM-SHA-256");
+					mongoCredentials.add(MongoCredential.createScramSha256Credential(clientMongoCredential.getUserName(),
 							clientMongoCredential.getDatabase(),
 							clientMongoCredential.getPassword().toCharArray()));
 				}
@@ -296,10 +352,17 @@ public class MongoDB implements BeanNameAware {
 				} else if (clientMongoCredential.getMechanism().equals(MongoCredential.GSSAPI_MECHANISM)) {
 					mongoCredentials.add(MongoCredential.createGSSAPICredential(clientMongoCredential.getUserName()));
 				}
+				else if (clientMongoCredential.getMechanism().equals("MONGODB-AWS")) {
+					mongoCredentials.add(MongoCredential.createAwsCredential(clientMongoCredential.getUserName(),clientMongoCredential.getPassword().toCharArray()));
+				}
+				else {
+					throw new UnsupportedOperationException("Unsupported Mechanism:"+clientMongoCredential.getMechanism());
+				}
 				
 				
 			}
 		}
+
 	}
 
 	public void initWithConfig(MongoDBConfig config){
@@ -543,7 +606,7 @@ public class MongoDB implements BeanNameAware {
 
 	public void init() {
 		try {
-
+			config.build();
 			if(log.isInfoEnabled()){
 				log.info("Init mongodb client config: {}",SimpleStringUtil.object2json(config));
 			}

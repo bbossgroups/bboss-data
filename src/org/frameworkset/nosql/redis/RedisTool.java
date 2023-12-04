@@ -2596,7 +2596,7 @@ public class RedisTool {
 	 * @return Bulk reply.
 	 */
 
-	public List<String> configGet(final String pattern) {
+	public Map<String, String>  configGet(final String pattern) {
 		RedisHelper redisHelper = null;
 		try
 		{

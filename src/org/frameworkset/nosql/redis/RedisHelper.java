@@ -2807,7 +2807,7 @@ public class RedisHelper {
 	   * @return Bulk reply.
 	   */
 	  
-	  public List<String> configGet(final String pattern) {
+	  public Map<String, String>  configGet(final String pattern) {
 		  init();
 		  if(this.jedis != null)
 				return jedis.configGet( pattern) ;

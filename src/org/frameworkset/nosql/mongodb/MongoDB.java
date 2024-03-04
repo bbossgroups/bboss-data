@@ -12,94 +12,39 @@ import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
-import com.mongodb.connection.ConnectionPoolSettings;
-import org.bson.BsonDocument;
-import org.bson.Document;
+import com.mongodb.connection.SslSettings;
 import org.bson.conversions.Bson;
 import org.frameworkset.spi.BeanNameAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import javax.net.ssl.SSLContext;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.mongodb.AuthenticationMechanism.*;
 
 public class MongoDB implements BeanNameAware {
-//	private static Method autoConnectRetryMethod;
-//	static {
-//		try {
-//			autoConnectRetryMethod = Builder.class.getMethod("autoConnectRetry", boolean.class);
-//		} catch (NoSuchMethodException e) {
-//			// // TODO Auto-generated catch block
-//			// e.printStackTrace();
-//		} catch (SecurityException e) {
-//			// // TODO Auto-generated catch block
-//			// e.printStackTrace();
-//		}
-//	}
+
 	private MongoDBConfig config;
 	private static Logger log = LoggerFactory.getLogger(MongoDB.class);
-//	private String serverAddresses;
-//	private String option;
-//	private String writeConcern;
-//	private String readPreference;
+
 	private MongoClient mongoclient;
-//	private String mode = null;
-//	private boolean autoConnectRetry = true;
-//	private int connectionsPerHost = 500;
-//	private int maxWaitTime = 120000;
-//	private int socketTimeout = 0;
-//	private int connectTimeout = 15000;
-//	private int threadsAllowedToBlockForConnectionMultiplier = 50;
-//	private boolean socketKeepAlive = true;
+
 
 	private List<MongoCredential> mongoCredentials;
 
 	public MongoDB getMongoClient() {
 
-		// try {
-		// Mongo mongoClient = new Mongo(Arrays.asList(new
-		// ServerAddress("10.0.15.134", 27017),
-		// new ServerAddress("10.0.15.134", 27018),
-		// new ServerAddress("10.0.15.38", 27017),new
-		// ServerAddress("10.0.15.39", 27017)
-		// ));
-		// mongoClient.addOption( Bytes.QUERYOPTION_SLAVEOK );
-		// mongoClient.setWriteConcern(WriteConcern.JOURNAL_SAFE);
-		//// ReadPreference.secondaryPreferred();
-		// mongoClient.setReadPreference(ReadPreference.nearest());
-		//// mongoClient.setReadPreference(ReadPreference.primaryPreferred());
-		// return mongoClient;
-		// } catch (Exception e) {
-		// throw new java.lang.RuntimeException(e);
-		// }
+		 
 		return this;
 	}
 	
 	public MongoClient getMongo() {
 
-		// try {
-		// Mongo mongoClient = new Mongo(Arrays.asList(new
-		// ServerAddress("10.0.15.134", 27017),
-		// new ServerAddress("10.0.15.134", 27018),
-		// new ServerAddress("10.0.15.38", 27017),new
-		// ServerAddress("10.0.15.39", 27017)
-		// ));
-		// mongoClient.addOption( Bytes.QUERYOPTION_SLAVEOK );
-		// mongoClient.setWriteConcern(WriteConcern.JOURNAL_SAFE);
-		//// ReadPreference.secondaryPreferred();
-		// mongoClient.setReadPreference(ReadPreference.nearest());
-		//// mongoClient.setReadPreference(ReadPreference.primaryPreferred());
-		// return mongoClient;
-		// } catch (Exception e) {
-		// throw new java.lang.RuntimeException(e);
-		// }
+		 
 		return this.mongoclient;
 	}
 
@@ -134,60 +79,7 @@ public class MongoDB implements BeanNameAware {
 		return trueaddresses;
 	}
 
-//	private int[] parserOption() throws NumberFormatException, UnknownHostException {
-//		String option = this.getOption();
-//		if (StringUtil.isEmpty(option))
-//			return null;
-//		option = option.trim();
-//		String[] options = option.split("\r\n");
-//		int[] ret = new int[options.length];
-//		int i = 0;
-//		for (String op : options) {
-//			op = op.trim();
-//			ret[i] = _getOption(op);
-//			i++;
-//		}
-//		return ret;
-//	}
-
-//	private int _getOption(String op) {
-//		if (op.equals("QUERYOPTION_TAILABLE"))
-//			return QUERYOPTION_TAILABLE;
-//		else if (op.equals("QUERYOPTION_SLAVEOK"))
-//			return QUERYOPTION_SLAVEOK;
-//		else if (op.equals("QUERYOPTION_OPLOGREPLAY"))
-//			return QUERYOPTION_OPLOGREPLAY;
-//		else if (op.equals("QUERYOPTION_NOTIMEOUT"))
-//			return QUERYOPTION_NOTIMEOUT;
-//
-//		else if (op.equals("QUERYOPTION_AWAITDATA"))
-//			return QUERYOPTION_AWAITDATA;
-//
-//		else if (op.equals("QUERYOPTION_EXHAUST"))
-//			return QUERYOPTION_EXHAUST;
-//
-//		else if (op.equals("QUERYOPTION_PARTIAL"))
-//			return QUERYOPTION_PARTIAL;
-//
-//		else if (op.equals("RESULTFLAG_CURSORNOTFOUND"))
-//			return RESULTFLAG_CURSORNOTFOUND;
-//		else if (op.equals("RESULTFLAG_ERRSET"))
-//			return RESULTFLAG_ERRSET;
-//
-//		else if (op.equals("RESULTFLAG_SHARDCONFIGSTALE"))
-//			return RESULTFLAG_SHARDCONFIGSTALE;
-//		else if (op.equals("RESULTFLAG_AWAITCAPABLE"))
-//			return RESULTFLAG_AWAITCAPABLE;
-//		throw new RuntimeException("未知的option:" + op);
-//
-//	}
-
-	public static void main(String[] args) {
-		String aa = "REPLICA_ACKNOWLEDGED(10)";
-		int idx = aa.indexOf("(");
-		String n = aa.substring(idx + 1, aa.length() - 1);
-		System.out.println(n);
-	}
+ 
 
 	private WriteConcern _getWriteConcern() {
 		String writeConcern = this.getWriteConcern();
@@ -604,6 +496,13 @@ public class MongoDB implements BeanNameAware {
 		return clientBuilder;
 	}
 
+    
+    private void customSettingBuilder(MongoClientSettings.Builder clientBuilder){
+        if(config.getCustomSettingBuilder() != null){
+            config.getCustomSettingBuilder().customSettingBuilder(clientBuilder,config);
+
+        }
+    }
 	public void init() {
 		try {
 			config.build();
@@ -612,10 +511,10 @@ public class MongoDB implements BeanNameAware {
 			}
 
 			if(SimpleStringUtil.isNotEmpty(config.getConnectString())){
-				Builder builder = builder();
-				builder.applyConnectionString(new ConnectionString(config.getConnectString()));
-
-				MongoClientSettings settings = builder.build();
+				Builder clientBuilder = builder();
+                clientBuilder.applyConnectionString(new ConnectionString(config.getConnectString()));
+                customSettingBuilder(clientBuilder);
+				MongoClientSettings settings = clientBuilder.build();
 				// Create a new client and connect to the server
 				this.mongoclient =  MongoClients.create(settings);
 			}
@@ -626,7 +525,7 @@ public class MongoDB implements BeanNameAware {
 						builder.hosts(servers);
 
 				});
-
+                customSettingBuilder(clientBuilder);
 				MongoClientSettings settings = clientBuilder.build();
 				this.mongoclient = MongoClients.create(settings);
 

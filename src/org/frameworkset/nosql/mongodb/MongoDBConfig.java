@@ -15,6 +15,7 @@ package org.frameworkset.nosql.mongodb;
  * limitations under the License.
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.frameworkset.util.SimpleStringUtil;
 
 import java.util.ArrayList;
@@ -53,6 +54,8 @@ public class MongoDBConfig {
 	private String userName;
 	private String password;
 	private String mechanism;
+    @JsonIgnore
+    private CustomSettingBuilder customSettingBuilder;
 
 	public String getUserName() {
 		return userName;
@@ -312,4 +315,13 @@ public class MongoDBConfig {
 		this.authDb = authDb;
 		return this;
 	}
+
+    public CustomSettingBuilder getCustomSettingBuilder() {
+        return customSettingBuilder;
+    }
+
+    public MongoDBConfig setCustomSettingBuilder(CustomSettingBuilder customSettingBuilder) {
+        this.customSettingBuilder = customSettingBuilder;
+        return this;
+    }
 }

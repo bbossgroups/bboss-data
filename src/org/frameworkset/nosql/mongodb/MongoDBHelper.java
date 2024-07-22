@@ -12,12 +12,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MongoDBHelper {
 	public static final String defaultMongoDB = "default";
 	private static Logger logger = LoggerFactory.getLogger(MongoDBHelper.class);
 	private static BaseApplicationContext context = null;
-	private static Map<String,MongoDB> mongoDBContainer = new HashMap<String,MongoDB>();
+	private static Map<String,MongoDB> mongoDBContainer = new ConcurrentHashMap<String,MongoDB>();
 
 	private static void check(){
 		if(context == null){

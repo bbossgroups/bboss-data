@@ -8,6 +8,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.resps.Slowlog;
 
 import java.util.List;
+import java.util.Map;
 
 public class RedisTest {
 
@@ -64,8 +65,8 @@ public class RedisTest {
 			Jedis jedis = redisHelper.getJedis();
 			System.out.println(jedis.info());
 
-			List<String> redis_maxclients = jedis.configGet("maxclients");
-			List<String>  redis_maxmemory = jedis.configGet("maxmemory");
+			Map<String,String> redis_maxclients = jedis.configGet("maxclients");
+            Map<String,String>  redis_maxmemory = jedis.configGet("maxmemory");
 			System.out.println(redis_maxmemory);
 			List<Slowlog> slowlogs = jedis.slowlogGet();
 			System.out.println(slowlogs.size());

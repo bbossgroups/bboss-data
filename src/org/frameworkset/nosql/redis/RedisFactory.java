@@ -10,11 +10,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RedisFactory {
 	private static Logger logger = LoggerFactory.getLogger(RedisFactory.class);
 	public static final String DEFAULT_REDIS_POOL = "default";
-	private static Map<String,RedisDB> dbs = new HashMap<String,RedisDB>();
+	private static Map<String,RedisDB> dbs = new ConcurrentHashMap();
 	private static ThreadLocal<RedisHelperHolder> currentDB = new ThreadLocal<RedisHelperHolder>();
 
 	private static void checkRedisConfig(RedisConfig redisConfig){

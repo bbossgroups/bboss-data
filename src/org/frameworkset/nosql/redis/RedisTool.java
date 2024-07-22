@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.frameworkset.nosql.redis.RedisFactory.DEFAULT_REDIS_POOL;
 
@@ -46,8 +47,8 @@ public class RedisTool {
 	private boolean init;
 	private static RedisTool defaultRedisTool;
 	private static RedisTool initDefaultRedisTool;
-	private static Map<String,RedisTool> redisToolMap = new HashMap<String, RedisTool>();
-	private static Map<String,RedisTool> initRedisToolMap = new HashMap<String, RedisTool>();
+	private static Map<String,RedisTool> redisToolMap = new ConcurrentHashMap();
+	private static Map<String,RedisTool> initRedisToolMap = new ConcurrentHashMap();
 	private RedisTool(boolean init){
 		this(DEFAULT_REDIS_POOL,init);
 //		redisPoolName = DEFAULT_REDIS_POOL;

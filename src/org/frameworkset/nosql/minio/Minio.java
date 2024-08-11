@@ -56,18 +56,35 @@ public class Minio {
             }
         }
     }
+    
+    private String buildErrorInfo(String error){
+        StringBuilder builder = new StringBuilder();
+        builder.append("Minio server:").append(minioConfig.getEndpoint()).append(",Name:").append(minioConfig.getName()).append(",").append(error);
+        return builder.toString();
+    }
 
     public void createBucket(String bucket) throws Exception {
-        boolean found =
-                minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
-        if (!found) {
-            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+        if(SimpleStringUtil.isEmpty(bucket)){
+            throw new DataMinioException(buildErrorInfo("The bucket is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]"));
         }
+        try {
+            boolean found =
+                    minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            }
+        }
+        catch (Exception e){
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket),e);
+        }
+        
     }
 
 
-    public String saveOssFile(File file,String bucket, String id, String remark) {
-        Assert.notNull(file, "The insert file is null,bucket:"+bucket);
+    public String saveOssFile(File file,String bucket, String id) {
+        if(file == null){
+            throw new DataMinioException("The insert file is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+        }
         String key = id;
         if (SimpleStringUtil.isEmpty(key)) {
             key = SimpleStringUtil.getUUID();
@@ -80,18 +97,18 @@ public class Minio {
                             .stream(inputStream, -1, maxFilePartSize)
                             .build());
         } catch (Exception e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("The insert file is "+file.getPath()+",bucket:"+bucket+",id:"+id),e);
         }
         return key;
     }
 
-    public String saveOssFile(File file, String bucket,String remark) {
-        return saveOssFile(file,bucket, null, remark);
+    public String saveOssFile(File file, String bucket) {
+        return saveOssFile(file,bucket, null);
     }
 
-    public String saveOssFile(byte[] bytes, String bucket,String id, String remark) {
+    public String saveOssFile(byte[] bytes, String bucket,String id) {
         if (bytes == null || bytes.length == 0) {
-            throw new DataMinioException("bytes is blank,bucket:"+bucket);
+            throw new DataMinioException(buildErrorInfo("bytes is blank,bucket:"+bucket));
         }
         String key = id;
         if (!SimpleStringUtil.hasLength(key)) {
@@ -101,20 +118,20 @@ public class Minio {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
-                            .object(key)
+                            .object(key)                            
                             .stream(new ByteArrayInputStream(bytes), bytes.length, -1)
                             .build());
         } catch (Exception e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+id),e);
         }
         return key;
     }
 
-    public String saveOssFile(byte[] bytes,String bucket, String remark) {
-        return saveOssFile(bytes,  bucket, null, remark);
+    public String saveOssFile(byte[] bytes,String bucket) {
+        return saveOssFile(bytes,  bucket, null);
     }
 
-    public String saveOssFile(InputStream inputStream, String bucket,String id, String remark) {
+    public String saveOssFile(InputStream inputStream, String bucket,String id) {
         String key = id;
         if (!SimpleStringUtil.hasLength(key)) {
             key = SimpleStringUtil.getUUID32();
@@ -127,13 +144,13 @@ public class Minio {
                             .stream(inputStream, -1, maxFilePartSize)
                             .build());
         } catch (Exception e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+id),e);
         }
         return key;
     }
 
-    public String saveOssFile(InputStream inputStream, String bucket,String remark) {
-        return saveOssFile(inputStream, bucket,null, remark);
+    public String saveOssFile(InputStream inputStream, String bucket) {
+        return saveOssFile(inputStream, bucket,null);
     }
 
     private   byte[] readAllBytes(InputStream inputStream) throws IOException {
@@ -146,9 +163,11 @@ public class Minio {
         return byteArrayOutputStream.toByteArray();
     }
     public OSSFileContent getOssFile(String bucket,String key) {
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(key == null )
+            throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         OSSFileContent ossObject = new OSSFileContent();
-        Assert.notNull(bucket, "bucket is blank!");
-        Assert.notNull(key, "key is blank,bucket:"+bucket);        
         try (InputStream stream = minioClient.getObject(GetObjectArgs.builder()
                 .bucket(bucket)
                 .object(key)
@@ -158,14 +177,16 @@ public class Minio {
             ossObject.setBucketName(bucket);
             ossObject.setBytes(readAllBytes(stream));
         } catch (Exception e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
         }
         return ossObject;
     }
 
     public InputStream getOssFileStream(String bucket,String key) {
-        Assert.notNull(bucket, "bucket is blank!");
-        Assert.notNull(key, "key is blank,bucket:"+bucket);
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(key == null )
+            throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         try {
            InputStream stream = minioClient.getObject(GetObjectArgs.builder()
                     .bucket(bucket)
@@ -174,7 +195,7 @@ public class Minio {
             );
             return stream;
         } catch (Exception e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
         }
     }
 
@@ -183,79 +204,102 @@ public class Minio {
         try {
             out.write(bytes);
         } catch (IOException e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
         }
     }
 
     public void getOssFile(String bucket,String key, File file) {
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataMinioException("file not exist! file:" + key+",bucket:"+bucket);
+            throw new DataMinioException("file not exist! file:" + key+",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         }
         try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file))) {
             byte[] bytes = (getOssFile(  bucket,key)).getBytes();
             if (bytes != null && bytes.length > 0)
                 bos.write(bytes);
         } catch (IOException e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key+",file:"+file.getPath()),e);
         }
     }
 
     public void getOssFile(String bucket,String key, String fileName) {
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataMinioException("File not exist! file:" + key + ",bucket:"+bucket);
+            throw new DataMinioException("File not exist! file:" + key + ",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         }
         try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fileName))) {
             byte[] bytes = (getOssFile(  bucket,key)).getBytes();
             if (bytes != null && bytes.length > 0)
                 bos.write(bytes);
         } catch (IOException e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key+",file:"+fileName),e);
         }
     }
 
     public void deleteOssFile(String bucket,String key) {
 
-        Assert.notNull(bucket, "bucket is blank");
-        Assert.notNull(key, "key is blank,bucket:"+bucket);
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(key == null )
+            throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");;
         try {
             minioClient.removeObject(RemoveObjectArgs.builder()
                     .bucket( bucket)
                     .object(key)
                     .build());
         } catch (Exception e) {
-            throw new DataMinioException(e);
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
         }
 
     }
 
     public String updateOssFile(String bucket,String key, byte[] bytes) {
-        Assert.notNull(bucket, "bucket is blank");
-        Assert.notNull(key, "key is blank,bucket:"+bucket);
-        Assert.notNull(bytes, "content is blank,bucket:"+bucket);
+        if(bytes == null )
+            throw new DataMinioException("content is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(key == null )
+            throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         deleteOssFile(  bucket,key);
         return saveOssFile(bytes,   bucket,"update");
 
     }
 
     public String updateOssFile(String bucket,String key, File file) {
-        Assert.notNull(bucket, "bucket is blank");
-        Assert.notNull(key, "key is blank,bucket:"+bucket);
-        Assert.notNull(file, "file is blank,bucket:"+bucket);
+        if(file == null )
+            throw new DataMinioException("file is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(key == null )
+            throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         deleteOssFile(  bucket,key);
         return saveOssFile(file,  bucket, "update");
     }
 
     public String updateOssFile(String bucket,String key, InputStream inputStream) {
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(key == null )
+            throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+
         try {
+            
             return updateOssFile(  bucket,key, readAllBytes(inputStream));
-        } catch (IOException e) {
-            throw new DataMinioException(e);
-        }
+        }catch (DataMinioException e) {
+            throw e;
+        }catch (IOException e) {
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",key:"+key),e);
+        } 
     }
 
     public boolean exist(String bucket,String key) {
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(key == null )
+            throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+
         try {
             minioClient.statObject(StatObjectArgs.builder().bucket(bucket)
                     .object(key).build());
@@ -266,21 +310,36 @@ public class Minio {
     }
 
     public boolean pathExist(String bucket,String path) {
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(path == null )
+            throw new DataMinioException("path is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+
         return exist(  bucket,path);
     }
 
     public void createPath(String bucket,String path) {
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(path == null )
+            throw new DataMinioException("path is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+
         try {
             minioClient.putObject(PutObjectArgs.builder().bucket(bucket).object(path)
                     .stream(new ByteArrayInputStream(new byte[0], 0, 0), 0, -1)
                     .build());
         } catch (Exception e) {
-            logger.error("create path failed: {},bucket:{}", path,bucket);
-            throw new DataMinioException(e);
+            logger.error("create path failed: {},bucket:{},minio[{}]", path,bucket,minioConfig.getName());
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
     }
 
     public List<OSSFile> listOssFile(String bucket,String path) {
+        if(bucket == null )
+            throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+        if(path == null )
+            throw new DataMinioException("path is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+
         if (!SimpleStringUtil.hasLength(path))
             return null;
         try {
@@ -301,8 +360,8 @@ public class Minio {
             }
             return list;
         } catch (Exception e) {
-            logger.error("list path: {},bucket:{}", path,bucket);
-            throw new DataMinioException(e);
+            logger.error("list path: {},bucket:{},minio[{}]", path,bucket,minioConfig.getName());
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
     }
 }

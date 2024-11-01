@@ -17,8 +17,8 @@ package org.frameworkset.nosql.minio;
 
 import com.frameworkset.util.SimpleStringUtil;
 import io.minio.MinioClient;
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
-import org.frameworkset.nosql.mongodb.MongoDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +47,13 @@ public class MinioHelper {
         if(!minioContainer.containsKey(minioConfig.getName())){
             synchronized (minioContainer){
                 if(!minioContainer.containsKey(minioConfig.getName())){
+                    ConnectionPool connectionPool = new ConnectionPool(minioConfig.getPoolMaxIdleConnections(),
+                                                                        minioConfig.getPoolKeepAliveDuration(),
+                                                                        minioConfig.getPoolTimeUnit());
+                    
                     OkHttpClient httpClient = minioConfig.getHttpClient() == null?
                             new OkHttpClient.Builder()
+                                    .connectionPool(connectionPool)
                             .connectTimeout(minioConfig.getConnectTimeout(), TimeUnit.MILLISECONDS)
                             .readTimeout(minioConfig.getReadTimeout(), TimeUnit.MILLISECONDS)
                             .writeTimeout(minioConfig.getWriteTimeout(), TimeUnit.MILLISECONDS)
@@ -61,6 +66,7 @@ public class MinioHelper {
                                     .build();
                     Minio minio = new Minio(minioClient, minioConfig);
                     minioContainer.put(minioConfig.getName(),minio);
+                    logger.info("Init minio datasource successed:{}",SimpleStringUtil.object2json(minioConfig));
                     return true;
                 }
             }

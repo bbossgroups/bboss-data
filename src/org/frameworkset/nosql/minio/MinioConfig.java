@@ -15,7 +15,10 @@ package org.frameworkset.nosql.minio;
  * limitations under the License.
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import okhttp3.OkHttpClient;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>Description: </p>
@@ -30,8 +33,9 @@ public class MinioConfig {
     private String accessKeyId;
     private String secretAccesskey;
     private String region;
+    @JsonIgnore
     private OkHttpClient httpClient;
-
+    
 
 
     private long maxFilePartSize = 10 * 1024 * 1024;
@@ -41,11 +45,15 @@ public class MinioConfig {
     private int readTimeout = 60000;
 
     private int writeTimeout = 60000;
+    private int poolMaxIdleConnections = 5;
+    private int poolKeepAliveDuration = 5;
+    @JsonIgnore
+    private TimeUnit poolTimeUnit = TimeUnit.MINUTES;
 
     public int getConnectTimeout() {
         return connectTimeout;
     }
-
+ 
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
     }
@@ -117,5 +125,29 @@ public class MinioConfig {
 
     public void setHttpClient(OkHttpClient httpClient) {
         this.httpClient = httpClient;
+    }
+
+    public int getPoolMaxIdleConnections() {
+        return poolMaxIdleConnections;
+    }
+
+    public void setPoolMaxIdleConnections(int poolMaxIdleConnections) {
+        this.poolMaxIdleConnections = poolMaxIdleConnections;
+    }
+
+    public int getPoolKeepAliveDuration() {
+        return poolKeepAliveDuration;
+    }
+
+    public void setPoolKeepAliveDuration(int poolKeepAliveDuration) {
+        this.poolKeepAliveDuration = poolKeepAliveDuration;
+    }
+
+    public TimeUnit getPoolTimeUnit() {
+        return poolTimeUnit;
+    }
+
+    public void setPoolTimeUnit(TimeUnit poolTimeUnit) {
+        this.poolTimeUnit = poolTimeUnit;
     }
 }

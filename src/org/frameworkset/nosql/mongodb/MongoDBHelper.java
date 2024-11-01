@@ -10,7 +10,7 @@ import org.frameworkset.spi.DefaultApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,6 +54,21 @@ public class MongoDBHelper {
 			}
 		}
 	}
+
+
+    public static void closeDB(MongoDBStartResult mongoDBStartResult) {
+        synchronized (mongoDBContainer) {
+            Map<String, Object> dbs = mongoDBStartResult.getDbstartResult();
+            if (dbs != null && dbs.size() > 0) {
+                Iterator<Map.Entry<String, Object>> iterator = dbs.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<String, Object> entry = iterator.next();
+                    closeDB(entry.getKey());
+                }
+            }
+        }
+        
+    }
 	public static MongoDB getMongoClient(String name)
 	{
 		if(StringUtil.isEmpty(name))

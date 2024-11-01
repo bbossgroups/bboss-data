@@ -185,7 +185,9 @@ dependencies {
             [group: 'redis.clients', name: 'jedis', version: "${jedisversion}", transitive: false],
             [group: 'org.mongodb', name: 'mongodb-driver-sync', version: "${mongodbversion}", transitive: true],
             [group: 'com.google.code.gson', name: 'gson', version: "2.10.1", transitive: false],
+             
     )
-    api group: 'io.minio', name: 'minio', version: '8.5.11'
+    compileOnly group: 'io.minio', name: 'minio', version: '8.5.13'
+    compileOnly group: 'io.milvus', name: 'milvus-sdk-java', version: '2.4.8'
      
 }

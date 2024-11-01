@@ -63,7 +63,7 @@ public class Minio {
         return builder.toString();
     }
 
-    public void createBucket(String bucket) throws Exception {
+    public boolean createBucket(String bucket) throws Exception {
         if(SimpleStringUtil.isEmpty(bucket)){
             throw new DataMinioException(buildErrorInfo("The bucket is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]"));
         }
@@ -72,7 +72,9 @@ public class Minio {
                     minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
             if (!found) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+                return true;
             }
+            return false;
         }
         catch (Exception e){
             throw new DataMinioException(buildErrorInfo("bucket:"+bucket),e);

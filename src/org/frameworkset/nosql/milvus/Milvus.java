@@ -15,8 +15,19 @@ package org.frameworkset.nosql.milvus;
  * limitations under the License.
  */
 
+import com.frameworkset.util.SimpleStringUtil;
 import io.milvus.pool.MilvusClientV2Pool;
 import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
+import io.milvus.v2.service.vector.request.InsertReq;
+import io.milvus.v2.service.vector.request.UpsertReq;
+import io.milvus.v2.service.vector.response.InsertResp;
+import io.milvus.v2.service.vector.response.UpsertResp;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>Description: </p>
@@ -32,7 +43,36 @@ public class Milvus {
     public MilvusClientV2PoolExt getMilvusClientV2Pool() {
         return milvusClientV2Pool;
     }
-    
+    public List<String> loadCollectionSchema(String collectionName) {
+        
+        try {
+            return executeRequest(new MilvusFunction<List<String>>() {
+                @Override
+                public List<String> execute(MilvusClientV2 milvusClientV2) {
+                   return MilvusHelper.getCollectionSchemaIdx(  collectionName,  milvusClientV2);
+                }
+            });
+
+        } catch (DataMilvusException dataMilvusException) {
+            throw dataMilvusException;
+        } catch (Exception exception) {
+            throw new DataMilvusException("loadCollectionSchema failed:", exception);
+        } 
+    }
+    public <T> T executeRequest(MilvusFunction<T> milvusFunction){
+        
+        MilvusClientV2 milvusClientV2 = null;
+        try {
+            milvusClientV2 = getMilvusClientV2();
+            return milvusFunction.execute(milvusClientV2);
+             
+        }
+        finally {
+            if(milvusClientV2 != null){
+                release(milvusClientV2);
+            }
+        }
+    }
     public void shutdown(){
         if(this.milvusClientV2Pool != null){
             this.milvusClientV2Pool.close();

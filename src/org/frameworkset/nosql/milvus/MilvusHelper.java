@@ -20,12 +20,13 @@ import io.milvus.pool.MilvusClientV2Pool;
 import io.milvus.pool.PoolConfig;
 import io.milvus.v2.client.ConnectConfig;
 import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -149,6 +150,31 @@ public class MilvusHelper {
                 milvus.shutdown();
             }
         }
+    }
+
+    public static List<String> loadCollectionSchema(String name,String collectionName){
+        Milvus milvus = MilvusHelper.getMilvus(name);
+        return milvus.loadCollectionSchema(collectionName);
+
+    }
+
+    public static List<String> getCollectionSchemaIdx(String collectionName,MilvusClientV2 milvusClientV2){
+        
+        DescribeCollectionReq describeCollectionReq = DescribeCollectionReq.builder()
+                .collectionName(collectionName)
+                .build();
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(describeCollectionReq);
+        if(describeCollectionResp == null){
+            throw new DataMilvusException("Get describe of collection "+collectionName+": null ");
+        }
+        List<String> fields = describeCollectionResp.getFieldNames();
+        
+        return fields;
+    }
+
+    public static <T> T executeRequest(String name,MilvusFunction<T> milvusFunction){
+        Milvus milvus = MilvusHelper.getMilvus(name);
+        return milvus.executeRequest(milvusFunction);
     }
     
     public static void validateMilvus(Milvus milvus) throws Exception{

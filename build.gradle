@@ -188,6 +188,6 @@ dependencies {
              
     )
     compileOnly group: 'io.minio', name: 'minio', version: '8.5.13'
-    compileOnly group: 'io.milvus', name: 'milvus-sdk-java', version: '2.4.8'
+    compileOnly group: 'io.milvus', name: 'milvus-sdk-java', version: '2.5.0'
      
 }

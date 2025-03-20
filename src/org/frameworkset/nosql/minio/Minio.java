@@ -16,20 +16,15 @@ package org.frameworkset.nosql.minio;
  */
 
 import com.frameworkset.util.SimpleStringUtil;
-import io.minio.BucketExistsArgs;
-import io.minio.GetObjectArgs;
-import io.minio.ListObjectsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
-import io.minio.Result;
-import io.minio.StatObjectArgs;
+import io.minio.*;
+import io.minio.errors.*;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,6 +84,94 @@ public class Minio {
         
     }
 
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @param key
+     * @param contentType
+     * @return
+     */
+    public String uploadObject(String file,String bucket, String key,String contentType) {
+       return uploadObject(  file,  bucket,  key,  contentType,this. maxFilePartSize);
+    }
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @param key
+     * @param contentType
+     * @return
+     */
+    public String uploadObject(String file,String bucket, String key,String contentType,long maxFilePartSize) {
+        if(file == null){
+            throw new DataMinioException("The insert file is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+        }
+        if (SimpleStringUtil.isEmpty(key)) {
+            key = SimpleStringUtil.getUUID();
+        }
+
+        try {
+            UploadObjectArgs.Builder builder = UploadObjectArgs.builder();
+
+            builder.bucket(bucket)
+                    // 指定上传到minio的保存文件名（MyC文件夹下，文件夹不存在时会自动创建）
+                    .object(key)
+                    // 指定需要上传的文件地址
+                    .filename(file,maxFilePartSize);
+            if(contentType != null)
+                builder.contentType(contentType);
+            // 上传文件
+            minioClient.uploadObject(
+                    builder.build());
+        } catch (Exception e) {
+            throw new DataMinioException(buildErrorInfo("The insert file is "+file+",bucket:"+bucket+",key:"+key),e);
+        }
+        return key;
+    }
+
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @return
+     */
+    public String uploadObject(String file,String bucket,long maxFilePartSize) {
+        return uploadObject(  file,  bucket,  null,null,maxFilePartSize);
+    }
+
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @return
+     */
+    public String uploadObject(String file,String bucket) {
+        return uploadObject(file, bucket, null, null, this.maxFilePartSize);
+    }
+
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @param key
+     * @return
+     */
+    public String uploadObject(String file,String bucket, String key) {
+        return uploadObject(  file,  bucket,  key,null,this.maxFilePartSize);
+    }
+
+
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @param key
+     * @return
+     */
+    public String uploadObject(String file,String bucket, String key,long maxFilePartSize) {
+        return uploadObject(  file,  bucket,  key,null,maxFilePartSize);
+    }
 
     public String saveOssFile(File file,String bucket, String id) {
         if(file == null){
@@ -98,6 +181,7 @@ public class Minio {
         if (SimpleStringUtil.isEmpty(key)) {
             key = SimpleStringUtil.getUUID();
         }
+
         try (InputStream inputStream = new FileInputStream(file)) {
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -209,11 +293,24 @@ public class Minio {
     }
 
     public void getOssFile(String bucket,String key, OutputStream out) {
-        byte[] bytes = (getOssFile(  bucket,key)).getBytes();
-        try {
-            out.write(bytes);
+//        byte[] bytes = (getOssFile(  bucket,key)).getBytes();
+//        try {
+//            out.write(bytes);
+//        } catch (IOException e) {
+//            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
+//        }
+        // 先判断是否存在文件，再创建缓存文件。
+        if (!exist(bucket,key)) {
+            throw new DataMinioException("file not exist! file:" + key+",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+        }
+        try (             InputStream inputStream = getOssFileStream(  bucket,key)) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
         } catch (IOException e) {
-            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
+            throw new DataMinioException(buildErrorInfo("getOssFile bucket:"+bucket+",id:"+key+" to OutputStream failed:"),e);
         }
     }
 
@@ -222,28 +319,51 @@ public class Minio {
         if (!exist(bucket,key)) {
             throw new DataMinioException("file not exist! file:" + key+",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         }
-        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file))) {
-            byte[] bytes = (getOssFile(  bucket,key)).getBytes();
-            if (bytes != null && bytes.length > 0)
-                bos.write(bytes);
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file)) ;
+             InputStream inputStream = getOssFileStream(  bucket,key)) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                bos.write(buffer, 0, bytesRead);
+            }
         } catch (IOException e) {
-            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key+",file:"+file.getPath()),e);
+            throw new DataMinioException(buildErrorInfo("getOssFile bucket:"+bucket+",id:"+key+",file:"+file.getName()),e);
         }
     }
 
+    /**
+     * 获取oss对象内容，并写入fileName对应的文件
+     * @param bucket
+     * @param key
+     * @param fileName 保存的文件路径
+     */
     public void getOssFile(String bucket,String key, String fileName) {
-        // 先判断是否存在文件，再创建缓存文件。
-        if (!exist(bucket,key)) {
-            throw new DataMinioException("File not exist! file:" + key + ",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
-        }
-        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fileName))) {
-            byte[] bytes = (getOssFile(  bucket,key)).getBytes();
-            if (bytes != null && bytes.length > 0)
-                bos.write(bytes);
-        } catch (IOException e) {
-            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key+",file:"+fileName),e);
+        getOssFile(  bucket,  key, new File(fileName));
+    }
+
+    /**
+     * 获取oss对象内容，并写入fileName对应的文件
+     * @param bucket
+     * @param key
+     * @param fileName 保存的文件路径
+     */
+    public void downloadObject(String bucket,String key, String fileName) {
+        try {
+            minioClient.downloadObject(
+                    DownloadObjectArgs.builder()
+                            // 指定 bucket 存储桶
+                            .bucket(bucket)
+                            // 指定 哪个文件
+                            .object(key)
+                            // 指定存放位置与名称
+                            .filename(fileName)
+                            .build());
+        } catch (Exception e) {
+            throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",id:"+key+",fileName"+fileName),e);
         }
     }
+    
+     
 
     public void deleteOssFile(String bucket,String key) {
 
@@ -271,7 +391,7 @@ public class Minio {
         if(key == null )
             throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         deleteOssFile(  bucket,key);
-        return saveOssFile(bytes,   bucket,"update");
+        return saveOssFile(bytes,   bucket,key);
 
     }
 
@@ -284,7 +404,7 @@ public class Minio {
         if(key == null )
             throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         deleteOssFile(  bucket,key);
-        return saveOssFile(file,  bucket, "update");
+        return saveOssFile(file,  bucket, key);
     }
 
     public String updateOssFile(String bucket,String key, InputStream inputStream) {
@@ -294,15 +414,17 @@ public class Minio {
             throw new DataMinioException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
 
         try {
-            
-            return updateOssFile(  bucket,key, readAllBytes(inputStream));
+
+            deleteOssFile(  bucket,key);
+            return saveOssFile(inputStream,   bucket,key);
         }catch (DataMinioException e) {
             throw e;
-        }catch (IOException e) {
+        }catch (Exception e) {
             throw new DataMinioException(buildErrorInfo("bucket:"+bucket+",key:"+key),e);
         } 
     }
 
+    
     public boolean exist(String bucket,String key) {
         if(bucket == null )
             throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
@@ -344,6 +466,10 @@ public class Minio {
     }
 
     public List<OSSFile> listOssFile(String bucket,String path) {
+        return listOssFile(bucket,path,false);
+    }
+
+    public List<OSSFile> listOssFile(String bucket,String path,boolean recursive) {
         if(bucket == null )
             throw new DataMinioException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
         if(path == null )
@@ -353,7 +479,7 @@ public class Minio {
             return null;
         try {
             Iterable<Result<Item>> results = minioClient.listObjects(
-                    ListObjectsArgs.builder().bucket(bucket).prefix(path).recursive(true).build());
+                    ListObjectsArgs.builder().bucket(bucket).prefix(path).recursive(recursive).build());
             List<OSSFile> list = new ArrayList<>();
             OSSFile ossFile = null;
             for (Result<Item> result : results) {

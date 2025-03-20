@@ -151,27 +151,7 @@ public class RedisDB extends BeanInfoAware implements InitializingBean,org.frame
 		return minIdle;
 	}
 
-	/**
-
-	 public void startSharedPool() {
-	 GenericObjectPoolConfig config = new GenericObjectPoolConfig();
-	 config.setMaxTotal(poolMaxTotal);
-	 config.setMaxWaitMillis(poolMaxWaitMillis);
-	 List<JedisShardInfo> jedisClusterNode = new ArrayList<JedisShardInfo>();
-	 for(int i = 0; i < nodes.size(); i ++)
-	 {
-	 NodeInfo node = nodes.get(i);
-	 JedisShardInfo jedisShardInfo = new JedisShardInfo(node.getHost(), node.getPort());
-	 if(this.auth != null)
-	 jedisShardInfo.setPassword(auth);
-	 jedisClusterNode.add(jedisShardInfo);
-	 }
-
-	 shardedJedispool = new ShardedJedisPool(config, jedisClusterNode);
-
-
-	 }
-	 */
+	
 
 	public void startSingleNode()
 	{

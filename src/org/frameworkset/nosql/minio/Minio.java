@@ -161,6 +161,21 @@ public class Minio {
         return uploadObject(  file,  bucket,  key,null,this.maxFilePartSize);
     }
 
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @param key
+     * @return
+     */
+    public String uploadObject(File file,String bucket, String key) {
+        try {
+            return uploadObject(  file.getCanonicalPath(),  bucket,  key,null,this.maxFilePartSize);
+        } catch (IOException e) {
+            throw new DataMinioException(buildErrorInfo("The insert file is "+file.getAbsolutePath()+",bucket:"+bucket+",key:"+key),e);
+        }
+
+    }
 
     /**
      * 上传文件
@@ -173,26 +188,27 @@ public class Minio {
         return uploadObject(  file,  bucket,  key,null,maxFilePartSize);
     }
 
-    public String saveOssFile(File file,String bucket, String id) {
+    public String saveOssFile(File file,String bucket, String key) {
         if(file == null){
             throw new DataMinioException("The insert file is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
         }
-        String key = id;
-        if (SimpleStringUtil.isEmpty(key)) {
-            key = SimpleStringUtil.getUUID();
-        }
-
-        try (InputStream inputStream = new FileInputStream(file)) {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .stream(inputStream, -1, maxFilePartSize)
-                            .build());
-        } catch (Exception e) {
-            throw new DataMinioException(buildErrorInfo("The insert file is "+file.getPath()+",bucket:"+bucket+",id:"+id),e);
-        }
-        return key;
+        return this.uploadObject(file,bucket,key);
+//        String key = id;
+//        if (SimpleStringUtil.isEmpty(key)) {
+//            key = SimpleStringUtil.getUUID();
+//        }
+//
+//        try (InputStream inputStream = new FileInputStream(file)) {
+//            minioClient.putObject(
+//                    PutObjectArgs.builder()
+//                            .bucket(bucket)
+//                            .object(key)
+//                            .stream(inputStream, -1, maxFilePartSize)
+//                            .build());
+//        } catch (Exception e) {
+//            throw new DataMinioException(buildErrorInfo("The insert file is "+file.getPath()+",bucket:"+bucket+",id:"+id),e);
+//        }
+//        return key;
     }
 
     public String saveOssFile(File file, String bucket) {

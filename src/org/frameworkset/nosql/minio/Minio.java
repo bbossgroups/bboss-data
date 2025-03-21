@@ -354,7 +354,7 @@ public class Minio {
      * @param fileName 保存的文件路径
      */
     public void getOssFile(String bucket,String key, String fileName) {
-        getOssFile(  bucket,  key, new File(fileName));
+        downloadObject(  bucket,  key,fileName);
     }
 
     /**
@@ -364,6 +364,10 @@ public class Minio {
      * @param fileName 保存的文件路径
      */
     public void downloadObject(String bucket,String key, String fileName) {
+        // 先判断是否存在文件，再创建缓存文件。
+        if (!exist(bucket,key)) {
+            throw new DataMinioException("file not exist! file:" + key+",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+        }
         try {
             minioClient.downloadObject(
                     DownloadObjectArgs.builder()

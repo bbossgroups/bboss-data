@@ -1,4 +1,4 @@
-package org.frameworkset.nosql.minio;
+package org.frameworkset.nosql.s3;
 /**
  * Copyright 2022 bboss
  * <p>
@@ -15,31 +15,26 @@ package org.frameworkset.nosql.minio;
  * limitations under the License.
  */
 
+import org.frameworkset.util.ResourceStartResult;
+
+import java.util.Map;
+
 /**
- * <p>Description: </p>
+ * <p>Description: 记录启动数据源结果信息</p>
  * <p></p>
  * <p>Copyright (c) 2020</p>
- * @Date 2022/3/24
+ * @Date 2022/5/2
  * @author biaoping.yin
  * @version 1.0
  */
-public class DataMinioException extends RuntimeException{
-	public DataMinioException() {
+public class OSSStartResult extends ResourceStartResult {
+
+	public OSSStartResult addDBStartResult(String dbName){
+		addResourceStartResult(dbName);
+		return this;
 	}
 
-	public DataMinioException(String message) {
-		super(message);
-	}
-
-	public DataMinioException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	public DataMinioException(Throwable cause) {
-		super(cause);
-	}
-
-	public DataMinioException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
+	public Map<String,Object> getDbstartResult() {
+		return getResourceStartResult();
 	}
 }

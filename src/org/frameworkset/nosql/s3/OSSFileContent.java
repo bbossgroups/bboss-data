@@ -1,4 +1,4 @@
-package org.frameworkset.nosql.minio;
+package org.frameworkset.nosql.s3;
 /**
  * Copyright 2024 bboss
  * <p>
@@ -29,6 +29,9 @@ public class OSSFileContent {
 
     private String bucketName;
 
+
+    private String contentType;
+
     private byte[] bytes;
 
     public OSSFileContent() {
@@ -42,6 +45,14 @@ public class OSSFileContent {
     }
 
 
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+    
     public String getKey() {
         return key;
     }

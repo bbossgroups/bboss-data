@@ -1,4 +1,4 @@
-package org.frameworkset.nosql.minio;
+package org.frameworkset.nosql.s3;
 /**
  * Copyright 2024 bboss
  * <p>
@@ -18,6 +18,7 @@ package org.frameworkset.nosql.minio;
 import io.minio.messages.ResponseDate;
 
 import java.time.ZonedDateTime;
+import java.util.Date;
 
 /**
  * <p>Description: </p>
@@ -32,7 +33,7 @@ public class OSSFile {
     private String userTags;
     private boolean isDir = false;
     private String encodingType = null;
-    private ZonedDateTime responseDate;
+    private Date responseDate;
 
 
     private String etag;
@@ -84,11 +85,11 @@ public class OSSFile {
         this.encodingType = encodingType;
     }
 
-    public ZonedDateTime getResponseDate() {
+    public Date getResponseDate() {
         return responseDate;
     }
 
-    public void setResponseDate(ZonedDateTime responseDate) {
+    public void setResponseDate(Date responseDate) {
         this.responseDate = responseDate;
     }
 }

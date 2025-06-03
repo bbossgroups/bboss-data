@@ -17,8 +17,7 @@ package org.frameworkset.nosql.minio;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import okhttp3.OkHttpClient;
-
-import java.util.concurrent.TimeUnit;
+import org.frameworkset.nosql.s3.OSSConfig;
 
 /**
  * <p>Description: </p>
@@ -27,98 +26,14 @@ import java.util.concurrent.TimeUnit;
  * @author biaoping.yin
  * @Date 2024/8/7
  */
-public class MinioConfig {
-    private String name;
-    private String endpoint;
-    private String accessKeyId;
-    private String secretAccesskey;
-    private String region;
+public class MinioConfig extends OSSConfig {
+    
+    
     @JsonIgnore
     private OkHttpClient httpClient;
     
 
-
-    private long maxFilePartSize = 10 * 1024 * 1024;
-    
-    private int connectTimeout = 60000;
-
-    private int readTimeout = 60000;
-
-    private int writeTimeout = 60000;
-    private int poolMaxIdleConnections = 5;
-    private int poolKeepAliveDuration = 5;
-    @JsonIgnore
-    private TimeUnit poolTimeUnit = TimeUnit.MINUTES;
-
-    public int getConnectTimeout() {
-        return connectTimeout;
-    }
- 
-    public void setConnectTimeout(int connectTimeout) {
-        this.connectTimeout = connectTimeout;
-    }
-    public long getMaxFilePartSize() {
-        return maxFilePartSize;
-    }
-
-    public void setMaxFilePartSize(long maxFilePartSize) {
-        this.maxFilePartSize = maxFilePartSize;
-    }
-    public int getReadTimeout() {
-        return readTimeout;
-    }
-
-    public void setReadTimeout(int readTimeout) {
-        this.readTimeout = readTimeout;
-    }
-
-    public int getWriteTimeout() {
-        return writeTimeout;
-    }
-
-    public void setWriteTimeout(int writeTimeout) {
-        this.writeTimeout = writeTimeout;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public String getAccessKeyId() {
-        return accessKeyId;
-    }
-
-    public void setAccessKeyId(String accessKeyId) {
-        this.accessKeyId = accessKeyId;
-    }
-
-    public String getSecretAccesskey() {
-        return secretAccesskey;
-    }
-
-    public void setSecretAccesskey(String secretAccesskey) {
-        this.secretAccesskey = secretAccesskey;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
+  
     public OkHttpClient getHttpClient() {
         return httpClient;
     }
@@ -127,27 +42,5 @@ public class MinioConfig {
         this.httpClient = httpClient;
     }
 
-    public int getPoolMaxIdleConnections() {
-        return poolMaxIdleConnections;
-    }
-
-    public void setPoolMaxIdleConnections(int poolMaxIdleConnections) {
-        this.poolMaxIdleConnections = poolMaxIdleConnections;
-    }
-
-    public int getPoolKeepAliveDuration() {
-        return poolKeepAliveDuration;
-    }
-
-    public void setPoolKeepAliveDuration(int poolKeepAliveDuration) {
-        this.poolKeepAliveDuration = poolKeepAliveDuration;
-    }
-
-    public TimeUnit getPoolTimeUnit() {
-        return poolTimeUnit;
-    }
-
-    public void setPoolTimeUnit(TimeUnit poolTimeUnit) {
-        this.poolTimeUnit = poolTimeUnit;
-    }
+    
 }

@@ -19,6 +19,7 @@ import com.frameworkset.util.SimpleStringUtil;
 import io.minio.MinioClient;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
+import org.frameworkset.nosql.s3.OSSStartResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public class MinioHelper {
                 if(!minioContainer.containsKey(minioConfig.getName())){
                     ConnectionPool connectionPool = new ConnectionPool(minioConfig.getPoolMaxIdleConnections(),
                                                                         minioConfig.getPoolKeepAliveDuration(),
-                                                                        minioConfig.getPoolTimeUnit());
+                            TimeUnit.MILLISECONDS);
                     
                     OkHttpClient httpClient = minioConfig.getHttpClient() == null?
                             new OkHttpClient.Builder()
@@ -91,8 +92,8 @@ public class MinioHelper {
     }
 
  
-    public static void shutdown(MinioStartResult minioStartResult){
-        Map<String,Object> stringObjectMap = minioStartResult.getResourceStartResult();
+    public static void shutdown(OSSStartResult OSSStartResult){
+        Map<String,Object> stringObjectMap = OSSStartResult.getResourceStartResult();
         Iterator iterator = stringObjectMap.keySet().iterator();;
         while (iterator.hasNext()){
             String name = (String)iterator.next();

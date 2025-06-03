@@ -196,6 +196,14 @@ dependencies {
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
     }
+
+    // AWS依赖开始
+    compileOnly platform("software.amazon.awssdk:bom:${s3version}")
+    compileOnly "software.amazon.awssdk:s3"
+    compileOnly "software.amazon.awssdk:auth"
+    compileOnly "software.amazon.awssdk:regions"
+    compileOnly "software.amazon.awssdk:apache-client"
+    // AWS依赖结束
     compileOnly group: 'io.milvus', name: 'milvus-sdk-java', version: '2.5.2'
      
 }

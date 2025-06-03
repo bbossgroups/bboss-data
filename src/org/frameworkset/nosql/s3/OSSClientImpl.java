@@ -1,4 +1,4 @@
-package org.frameworkset.nosql.minio;
+package org.frameworkset.nosql.s3;
 /**
  * Copyright 2024 bboss
  * <p>
@@ -16,18 +16,17 @@ package org.frameworkset.nosql.minio;
  */
 
 import com.frameworkset.util.SimpleStringUtil;
-import io.minio.*;
-import io.minio.messages.Item;
-import okhttp3.Headers;
-import org.frameworkset.nosql.s3.DataOSSException;
-import org.frameworkset.nosql.s3.OSSClient;
-import org.frameworkset.nosql.s3.OSSFile;
-import org.frameworkset.nosql.s3.OSSFileContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -38,24 +37,25 @@ import java.util.List;
  * @author biaoping.yin
  * @Date 2024/8/7
  */
-public class Minio implements OSSClient {
-    private static Logger logger = LoggerFactory.getLogger(Minio.class);
-    private MinioClient minioClient;
+public class OSSClientImpl implements OSSClient {
+    private static Logger logger = LoggerFactory.getLogger(OSSClientImpl.class);
+    private S3Client s3Client;
     private long maxFilePartSize;
-    private MinioConfig minioConfig;
-    public Minio(MinioClient minioClient,MinioConfig minioConfig){
-        this.minioClient = minioClient;
-        this.maxFilePartSize = minioConfig.getMaxFilePartSize();
-        this.minioConfig = minioConfig;
+    private OSSConfig ossConfig;
+    public OSSClientImpl(S3Client s3Client,
+                         OSSConfig ossConfig){
+        this.s3Client = s3Client;
+        this.maxFilePartSize = ossConfig.getMaxFilePartSize();
+        this.ossConfig = ossConfig;
     }
 
-    public MinioClient getMinioClient() {
-        return minioClient;
+    public S3Client getS3Client() {
+        return s3Client;
     }
     public void shutdown(){
-        if(minioClient != null){
+        if(s3Client != null){
             try {
-                minioClient.close();
+                s3Client.close();
             } catch (Exception e) {
                 logger.warn("");
             }
@@ -64,19 +64,25 @@ public class Minio implements OSSClient {
     
     private String buildErrorInfo(String error){
         StringBuilder builder = new StringBuilder();
-        builder.append("Minio server:").append(minioConfig.getEndpoint()).append(",Name:").append(minioConfig.getName()).append(",").append(error);
+        builder.append("Minio server:").append(ossConfig.getEndpoint()).append(",Name:").append(ossConfig.getName()).append(",").append(error);
         return builder.toString();
     }
 
     public boolean createBucket(String bucket) throws Exception {
         if(SimpleStringUtil.isEmpty(bucket)){
-            throw new DataOSSException(buildErrorInfo("The bucket is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]"));
+            throw new DataOSSException(buildErrorInfo("The bucket is null,bucket:"+bucket+",minio["+ossConfig.getName()+"]"));
         }
         try {
-            boolean found =
-                    minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+            boolean found = false;
+            try {
+                s3Client.headBucket(b -> b.bucket(bucket));
+                found = true;
+            } catch (NoSuchBucketException ignored) {
+                found = false;
+            }
+
             if (!found) {
-                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+                s3Client.createBucket(b -> b.bucket(bucket));
                 return true;
             }
             return false;
@@ -108,29 +114,34 @@ public class Minio implements OSSClient {
      */
     public String uploadObject(String file,String bucket, String key,String contentType,long maxFilePartSize) {
         if(file == null){
-            throw new DataOSSException("The insert file is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("The insert file is null,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         }
         if (SimpleStringUtil.isEmpty(key)) {
             key = SimpleStringUtil.getUUID();
         }
 
         try {
-            UploadObjectArgs.Builder builder = UploadObjectArgs.builder();
+            if (file == null) {
+                throw new DataOSSException("The insert file is null,bucket:" + bucket);
+            }
+            if (SimpleStringUtil.isEmpty(key)) {
+                key = SimpleStringUtil.getUUID();
+            }
 
-            builder.bucket(bucket)
-                    // 指定上传到minio的保存文件名（MyC文件夹下，文件夹不存在时会自动创建）
-                    .object(key)
-                    // 指定需要上传的文件地址
-                    .filename(file,maxFilePartSize);
-            if(contentType != null)
-                builder.contentType(contentType);
-            // 上传文件
-            minioClient.uploadObject(
-                    builder.build());
+            PutObjectRequest.Builder putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key);
+
+            if (contentType != null) {
+                putObjectRequest.contentType(contentType);
+            }
+
+            File fileToUpload = new File(file);
+            s3Client.putObject(putObjectRequest.build(), RequestBody.fromFile(fileToUpload));
+            return key;
         } catch (Exception e) {
             throw new DataOSSException(buildErrorInfo("The insert file is "+file+",bucket:"+bucket+",key:"+key),e);
         }
-        return key;
     }
 
     /**
@@ -193,7 +204,7 @@ public class Minio implements OSSClient {
 
     public String saveOssFile(File file,String bucket, String key) {
         if(file == null){
-            throw new DataOSSException("The insert file is null,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("The insert file is null,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         }
         return this.uploadObject(file,bucket,key);
 //        String key = id;
@@ -227,42 +238,108 @@ public class Minio implements OSSClient {
             key = SimpleStringUtil.getUUID32();
         }
         try {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
+
+            final long MULTIPART_THRESHOLD = maxFilePartSize;//5 * 1024 * 1024L; // 5MB
+            // 将 InputStream 读入 ByteArrayOutputStream 以便重复使用
+            long totalSize = bytes.length;
+
+            
+
+            byte[] fileBytes = bytes;
+
+            // 小文件直接使用 putObject 普通上传
+            if (totalSize < MULTIPART_THRESHOLD) {
+                final String t = key;
+                s3Client.putObject(builder -> builder
+                                .bucket(bucket)
+                                .key(t),
+//                                .contentType(contentType),
+                        RequestBody.fromBytes(fileBytes));
+                logger.info("Single-part upload complete: {} ({} bytes)", t, totalSize);
+                return key;
+            }
+
+            // 否则使用 Multipart Upload
+            String uploadId = s3Client.createMultipartUpload(CreateMultipartUploadRequest.builder()
                             .bucket(bucket)
-                            .object(key)                            
-                            .stream(new ByteArrayInputStream(bytes), bytes.length, -1)
-                            .build());
+                            .key(key)
+//                            .contentType(contentType)
+                            .build())
+                    .uploadId();
+
+            List<CompletedPart> completedParts = new ArrayList<>();
+            int partSize = (int) MULTIPART_THRESHOLD;
+            int partCount = (int) Math.ceil((double) totalSize / partSize);
+
+            for (int partNumber = 1; partNumber <= partCount; partNumber++) {
+                int start = (partNumber - 1) * partSize;
+                int end = Math.min(start + partSize, fileBytes.length);
+                byte[] partBytes = Arrays.copyOfRange(fileBytes, start, end);
+
+                UploadPartResponse uploadPartResponse = s3Client.uploadPart(UploadPartRequest.builder()
+                                .bucket(bucket)
+                                .key(key)
+                                .uploadId(uploadId)
+                                .partNumber(partNumber)
+                                .contentLength((long) partBytes.length)
+                                .build(),
+                        RequestBody.fromBytes(partBytes));
+
+                completedParts.add(CompletedPart.builder()
+                        .partNumber(partNumber)
+                        .eTag(uploadPartResponse.eTag())
+                        .build());
+
+                logger.debug("Uploaded part {} with size {}", partNumber, partBytes.length);
+            }
+
+            s3Client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .uploadId(uploadId)
+                    .multipartUpload(CompletedMultipartUpload.builder()
+                            .parts(completedParts)
+                            .build())
+                    .build());
+
+            logger.info("Multipart upload complete: {} ({} bytes)", key, totalSize);
+            return key;
         } catch (Exception e) {
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",id:"+id),e);
         }
-        return key;
     }
 
     public String saveOssFile(byte[] bytes,String bucket) {
         return saveOssFile(bytes,  bucket, null);
     }
 
-    public String saveOssFile(InputStream inputStream,long size, String bucket,String id) {
+    public String saveOssFile(InputStream inputStream, long size ,String bucket,String id) {
         String key = id;
         if (!SimpleStringUtil.hasLength(key)) {
             key = SimpleStringUtil.getUUID32();
         }
         try {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
+//            minioClient.putObject(
+//                    PutObjectArgs.builder()
+//                            .bucket(bucket)
+//                            .object(key)
+//                            .stream(inputStream, -1, maxFilePartSize)
+//                            .build());
+            s3Client.putObject(
+                    PutObjectRequest.builder()
                             .bucket(bucket)
-                            .object(key)
-                            .stream(inputStream, -1, maxFilePartSize)
-                            .build());
+                            .key(key)
+                            .build(),
+                    RequestBody.fromInputStream(inputStream,size)
+            );
         } catch (Exception e) {
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",id:"+id),e);
         }
         return key;
     }
 
-    public String saveOssFile(InputStream inputStream,long size, String bucket) {
-        return saveOssFile(inputStream,  size, bucket,null);
+    public String saveOssFile(InputStream inputStream, long size, String bucket) {
+        return saveOssFile(inputStream,   size, bucket,null);
     }
 
     private   byte[] readAllBytes(InputStream inputStream) throws IOException {
@@ -274,42 +351,42 @@ public class Minio implements OSSClient {
         }
         return byteArrayOutputStream.toByteArray();
     }
+    
+    
     public OSSFileContent getOssFile(String bucket, String key) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         OSSFileContent ossObject = new OSSFileContent();
-        try (GetObjectResponse stream = minioClient.getObject(GetObjectArgs.builder()
+        try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(GetObjectRequest.builder()
                 .bucket(bucket)
-                .object(key)
-                .build()
-        )) {
-            Headers headers = stream.headers();
-            ossObject.setContentType(headers.get("Content-Type"));
+                .key(key)
+                .build())) {
+
+            GetObjectResponse metadata = response.response();
+            ossObject.setContentType(metadata.contentType());
             ossObject.setKey(key);
             ossObject.setBucketName(bucket);
-            ossObject.setBytes(readAllBytes(stream));
+            ossObject.setBytes(readAllBytes(response));
         } catch (Exception e) {
-            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
+            throw new DataOSSException(buildErrorInfo("bucket:" + bucket + ",id:" + key), e);
         }
         return ossObject;
     }
 
     public InputStream getOssFileStream(String bucket,String key) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         try {
-           InputStream stream = minioClient.getObject(GetObjectArgs.builder()
+            return s3Client.getObject(GetObjectRequest.builder()
                     .bucket(bucket)
-                    .object(key)
-                    .build()
-            );
-            return stream;
+                    .key(key)
+                    .build());
         } catch (Exception e) {
-            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
+            throw new DataOSSException(buildErrorInfo("bucket:" + bucket + ",id:" + key), e);
         }
     }
 
@@ -322,7 +399,7 @@ public class Minio implements OSSClient {
 //        }
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         }
         try (             InputStream inputStream = getOssFileStream(  bucket,key)) {
             byte[] buffer = new byte[1024];
@@ -338,7 +415,7 @@ public class Minio implements OSSClient {
     public void getOssFile(String bucket,String key, File file) {
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         }
         try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file)) ;
              InputStream inputStream = getOssFileStream(  bucket,key)) {
@@ -371,20 +448,16 @@ public class Minio implements OSSClient {
     public void downloadObject(String bucket,String key, String fileName) {
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         }
         try {
-            minioClient.downloadObject(
-                    DownloadObjectArgs.builder()
-                            // 指定 bucket 存储桶
+            s3Client.getObject(GetObjectRequest.builder()
                             .bucket(bucket)
-                            // 指定 哪个文件
-                            .object(key)
-                            // 指定存放位置与名称
-                            .filename(fileName)
-                            .build());
+                            .key(key)
+                            .build(),
+                    Paths.get(fileName));
         } catch (Exception e) {
-            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",id:"+key+",fileName"+fileName),e);
+            throw new DataOSSException(buildErrorInfo("bucket:" + bucket + ",id:" + key + ",fileName" + fileName), e);
         }
     }
     
@@ -393,28 +466,28 @@ public class Minio implements OSSClient {
     public void deleteOssFile(String bucket,String key) {
 
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");;
+            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");;
         try {
-            minioClient.removeObject(RemoveObjectArgs.builder()
-                    .bucket( bucket)
-                    .object(key)
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
                     .build());
         } catch (Exception e) {
-            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",id:"+key),e);
+            throw new DataOSSException(buildErrorInfo("bucket:" + bucket + ",id:" + key), e);
         }
 
     }
 
     public String updateOssFile(String bucket,String key, byte[] bytes) {
         if(bytes == null )
-            throw new DataOSSException("content is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("content is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
 
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         deleteOssFile(  bucket,key);
         return saveOssFile(bytes,   bucket,key);
 
@@ -422,26 +495,26 @@ public class Minio implements OSSClient {
 
     public String updateOssFile(String bucket,String key, File file) {
         if(file == null )
-            throw new DataOSSException("file is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("file is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
 
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
         deleteOssFile(  bucket,key);
         return saveOssFile(file,  bucket, key);
     }
 
     public String updateOssFile(String bucket,String key, InputStream inputStream,long size) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
 
         try {
 
             deleteOssFile(  bucket,key);
-            return saveOssFile(inputStream,  size,   bucket,key);
+            return saveOssFile(inputStream,size,   bucket,key);
         }catch (DataOSSException e) {
             throw e;
         }catch (Exception e) {
@@ -452,13 +525,12 @@ public class Minio implements OSSClient {
     
     public boolean exist(String bucket,String key) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
 
         try {
-            minioClient.statObject(StatObjectArgs.builder().bucket(bucket)
-                    .object(key).build());
+            s3Client.headObject(b -> b.bucket(bucket).key(key));
             return true;
         } catch (Exception e) {
             return false;
@@ -467,25 +539,30 @@ public class Minio implements OSSClient {
 
     public boolean pathExist(String bucket,String path) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(path == null )
-            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
 
         return exist(  bucket,path);
     }
 
     public void createPath(String bucket,String path) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(path == null )
-            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
 
         try {
-            minioClient.putObject(PutObjectArgs.builder().bucket(bucket).object(path)
-                    .stream(new ByteArrayInputStream(new byte[0], 0, 0), 0, -1)
-                    .build());
+            // 创建一个大小为 0 的空对象，用于模拟目录结构
+            s3Client.putObject(
+                    PutObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(path)
+                            .build(),
+                    RequestBody.fromBytes(new byte[0])
+            );
         } catch (Exception e) {
-            logger.error("create path failed: {},bucket:{},minio[{}]", path,bucket,minioConfig.getName());
+            logger.error("create path failed: {},bucket:{},minio[{}]", path,bucket,ossConfig.getName());
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
     }
@@ -496,31 +573,43 @@ public class Minio implements OSSClient {
 
     public List<OSSFile> listOssFile(String bucket,String path,boolean recursive) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
         if(path == null )
-            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+minioConfig.getName()+"]");
+            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
 
         if (!SimpleStringUtil.hasLength(path))
             return null;
         try {
-            Iterable<Result<Item>> results = minioClient.listObjects(
-                    ListObjectsArgs.builder().bucket(bucket).prefix(path).recursive(recursive).build());
             List<OSSFile> list = new ArrayList<>();
-            OSSFile ossFile = null;
-            for (Result<Item> result : results) {
-                Item item = result.get();
-                if (!item.objectName().equals(path)) {
-                    ossFile = new OSSFile();
-                    ossFile.setObjectName(item.objectName());
-                    ossFile.setSize(item.size());
-                    ossFile.setDir(item.isDir());
-                    ossFile.setResponseDate(Date.from(item.lastModified().toInstant()));
-                    list.add(ossFile);
-                }
+
+            ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
+                    .bucket(bucket)
+                    .prefix(path);
+
+            if (!recursive) {
+                requestBuilder.delimiter("/");
             }
+
+            ListObjectsV2Response response = s3Client.listObjectsV2(requestBuilder.build());
+
+            for (S3Object object : response.contents()) {
+                // 排除与目录本身同名的对象
+                if (object.key().equals(path)) continue;
+
+                OSSFile ossFile = new OSSFile();
+                ossFile.setObjectName(object.key());
+                ossFile.setSize(object.size());
+                ossFile.setDir(object.key().endsWith("/")); // S3 没有真正的目录结构，通常以 / 结尾表示“伪目录”
+                ossFile.setResponseDate(Date.from(object.lastModified()));
+                list.add(ossFile);
+            }
+
+            // 如果需要递归遍历更多页，可以使用分页器继续获取
+            // 这里只处理了第一页内容，如需全量可添加分页逻辑
+
             return list;
         } catch (Exception e) {
-            logger.error("list path: {},bucket:{},minio[{}]", path,bucket,minioConfig.getName());
+            logger.error("list path: {},bucket:{},minio[{}]", path,bucket,ossConfig.getName());
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
     }

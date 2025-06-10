@@ -43,7 +43,7 @@ public class OSSHelper {
     private static Map<String, OSSClient> ossClientConcurrentHashMap = new ConcurrentHashMap<>();
 
     /**
-     * 初始化minio客户端
+     * 初始化oss客户端
      * @param ossConfig
      * @return
      */
@@ -64,7 +64,7 @@ public class OSSHelper {
                             .socketFactory(null);
 //                    
                     S3ClientBuilder s3ClientBuilder = S3Client.builder()
-                    .endpointOverride(URI.create(ossConfig.getEndpoint()))
+                    .endpointOverride(URI.create(ossConfig.getEndpoint().trim()))
                     .credentialsProvider(StaticCredentialsProvider.create(
                             AwsBasicCredentials.create(ossConfig.getAccessKeyId(), ossConfig.getSecretAccesskey())))
                    
@@ -81,7 +81,7 @@ public class OSSHelper {
                    
                     OSSClient ossClient = new OSSClientImpl(s3Client, ossConfig);
                     ossClientConcurrentHashMap.put(ossConfig.getName(),ossClient);
-                    logger.info("Init minio datasource successed:{}",SimpleStringUtil.object2json(ossConfig));
+                    logger.info("Init oss datasource successed:{}",SimpleStringUtil.object2json(ossConfig));
                     return true;
                 }
             }

@@ -64,13 +64,13 @@ public class OSSClientImpl implements OSSClient {
     
     private String buildErrorInfo(String error){
         StringBuilder builder = new StringBuilder();
-        builder.append("Minio server:").append(ossConfig.getEndpoint()).append(",Name:").append(ossConfig.getName()).append(",").append(error);
+        builder.append("OSS server:").append(ossConfig.getEndpoint()).append(",Name:").append(ossConfig.getName()).append(",").append(error);
         return builder.toString();
     }
 
     public boolean createBucket(String bucket) throws Exception {
         if(SimpleStringUtil.isEmpty(bucket)){
-            throw new DataOSSException(buildErrorInfo("The bucket is null,bucket:"+bucket+",minio["+ossConfig.getName()+"]"));
+            throw new DataOSSException(buildErrorInfo("The bucket is null,bucket:"+bucket+",OSS["+ossConfig.getName()+"]"));
         }
         try {
             boolean found = false;
@@ -114,7 +114,7 @@ public class OSSClientImpl implements OSSClient {
      */
     public String uploadObject(String file,String bucket, String key,String contentType,long maxFilePartSize) {
         if(file == null){
-            throw new DataOSSException("The insert file is null,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("The insert file is null,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         }
         if (SimpleStringUtil.isEmpty(key)) {
             key = SimpleStringUtil.getUUID();
@@ -204,7 +204,7 @@ public class OSSClientImpl implements OSSClient {
 
     public String saveOssFile(File file,String bucket, String key) {
         if(file == null){
-            throw new DataOSSException("The insert file is null,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("The insert file is null,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         }
         return this.uploadObject(file,bucket,key);
 //        String key = id;
@@ -355,9 +355,9 @@ public class OSSClientImpl implements OSSClient {
     
     public OSSFileContent getOssFile(String bucket, String key) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         OSSFileContent ossObject = new OSSFileContent();
         try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(GetObjectRequest.builder()
                 .bucket(bucket)
@@ -377,9 +377,9 @@ public class OSSClientImpl implements OSSClient {
 
     public InputStream getOssFileStream(String bucket,String key) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         try {
             return s3Client.getObject(GetObjectRequest.builder()
                     .bucket(bucket)
@@ -399,7 +399,7 @@ public class OSSClientImpl implements OSSClient {
 //        }
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         }
         try (             InputStream inputStream = getOssFileStream(  bucket,key)) {
             byte[] buffer = new byte[1024];
@@ -415,7 +415,7 @@ public class OSSClientImpl implements OSSClient {
     public void getOssFile(String bucket,String key, File file) {
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         }
         try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file)) ;
              InputStream inputStream = getOssFileStream(  bucket,key)) {
@@ -448,7 +448,7 @@ public class OSSClientImpl implements OSSClient {
     public void downloadObject(String bucket,String key, String fileName) {
         // 先判断是否存在文件，再创建缓存文件。
         if (!exist(bucket,key)) {
-            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("file not exist! file:" + key+",bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         }
         try {
             s3Client.getObject(GetObjectRequest.builder()
@@ -466,9 +466,9 @@ public class OSSClientImpl implements OSSClient {
     public void deleteOssFile(String bucket,String key) {
 
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");;
+            throw new DataOSSException("key is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");;
         try {
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucket)
@@ -482,12 +482,12 @@ public class OSSClientImpl implements OSSClient {
 
     public String updateOssFile(String bucket,String key, byte[] bytes) {
         if(bytes == null )
-            throw new DataOSSException("content is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("content is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
 
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         deleteOssFile(  bucket,key);
         return saveOssFile(bytes,   bucket,key);
 
@@ -495,21 +495,21 @@ public class OSSClientImpl implements OSSClient {
 
     public String updateOssFile(String bucket,String key, File file) {
         if(file == null )
-            throw new DataOSSException("file is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("file is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
 
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
         deleteOssFile(  bucket,key);
         return saveOssFile(file,  bucket, key);
     }
 
     public String updateOssFile(String bucket,String key, InputStream inputStream,long size) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
 
         try {
 
@@ -525,9 +525,9 @@ public class OSSClientImpl implements OSSClient {
     
     public boolean exist(String bucket,String key) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(key == null )
-            throw new DataOSSException("key is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("key is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
 
         try {
             s3Client.headObject(b -> b.bucket(bucket).key(key));
@@ -539,18 +539,18 @@ public class OSSClientImpl implements OSSClient {
 
     public boolean pathExist(String bucket,String path) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(path == null )
-            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("path is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
 
         return exist(  bucket,path);
     }
 
     public void createPath(String bucket,String path) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(path == null )
-            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("path is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
 
         try {
             // 创建一个大小为 0 的空对象，用于模拟目录结构
@@ -562,7 +562,7 @@ public class OSSClientImpl implements OSSClient {
                     RequestBody.fromBytes(new byte[0])
             );
         } catch (Exception e) {
-            logger.error("create path failed: {},bucket:{},minio[{}]", path,bucket,ossConfig.getName());
+            logger.error("create path failed: {},bucket:{},OSS[{}]", path,bucket,ossConfig.getName());
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
     }
@@ -573,9 +573,9 @@ public class OSSClientImpl implements OSSClient {
 
     public List<OSSFile> listOssFile(String bucket,String path,boolean recursive) {
         if(bucket == null )
-            throw new DataOSSException("bucket is blank!"+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
         if(path == null )
-            throw new DataOSSException("path is blank,bucket:"+bucket+",minio["+ossConfig.getName()+"]");
+            throw new DataOSSException("path is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
 
         if (!SimpleStringUtil.hasLength(path))
             return null;
@@ -609,7 +609,7 @@ public class OSSClientImpl implements OSSClient {
 
             return list;
         } catch (Exception e) {
-            logger.error("list path: {},bucket:{},minio[{}]", path,bucket,ossConfig.getName());
+            logger.error("list path: {},bucket:{},OSS[{}]", path,bucket,ossConfig.getName());
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
     }

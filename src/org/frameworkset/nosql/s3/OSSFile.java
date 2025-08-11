@@ -15,9 +15,6 @@ package org.frameworkset.nosql.s3;
  * limitations under the License.
  */
 
-import io.minio.messages.ResponseDate;
-
-import java.time.ZonedDateTime;
 import java.util.Date;
 
 /**
@@ -31,9 +28,11 @@ public class OSSFile {
     private String objectName;
     private long size;
     private String userTags;
-    private boolean isDir = false;
+    private boolean dir = false;
+    private String parentDir;
     private String encodingType = null;
-    private Date responseDate;
+    private Date lastModified;
+    private String bulket;
 
 
     private String etag;
@@ -70,11 +69,11 @@ public class OSSFile {
     }
 
     public boolean isDir() {
-        return isDir;
+        return dir;
     }
 
     public void setDir(boolean dir) {
-        isDir = dir;
+        this.dir = dir;
     }
 
     public String getEncodingType() {
@@ -85,11 +84,27 @@ public class OSSFile {
         this.encodingType = encodingType;
     }
 
-    public Date getResponseDate() {
-        return responseDate;
+    public Date getLastModified() {
+        return lastModified;
     }
 
-    public void setResponseDate(Date responseDate) {
-        this.responseDate = responseDate;
+    public void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public String getBulket() {
+        return bulket;
+    }
+
+    public void setBulket(String bulket) {
+        this.bulket = bulket;
+    }
+
+    public String getParentDir() {
+        return parentDir;
+    }
+
+    public void setParentDir(String parentDir) {
+        this.parentDir = parentDir;
     }
 }

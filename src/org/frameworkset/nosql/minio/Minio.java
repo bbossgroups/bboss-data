@@ -514,7 +514,7 @@ public class Minio implements OSSClient {
                     ossFile.setObjectName(item.objectName());
                     ossFile.setSize(item.size());
                     ossFile.setDir(item.isDir());
-                    ossFile.setResponseDate(Date.from(item.lastModified().toInstant()));
+                    ossFile.setLastModified(Date.from(item.lastModified().toInstant()));
                     list.add(ossFile);
                 }
             }

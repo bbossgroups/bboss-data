@@ -571,36 +571,70 @@ public class OSSClientImpl implements OSSClient {
         return listOssFile(bucket,path,false);
     }
 
+    public List<OSSFile> listOssFile(String bucket) {
+        return listOssFile(bucket,null,false);
+    }
+
     public List<OSSFile> listOssFile(String bucket,String path,boolean recursive) {
         if(bucket == null )
             throw new DataOSSException("bucket is blank!"+",OSS["+ossConfig.getName()+"]");
-        if(path == null )
-            throw new DataOSSException("path is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
-
-        if (!SimpleStringUtil.hasLength(path))
-            return null;
+//        if(path == null )
+//            throw new DataOSSException("path is blank,bucket:"+bucket+",OSS["+ossConfig.getName()+"]");
+//
+//        if (!SimpleStringUtil.hasLength(path))
+//            return null;
         try {
             List<OSSFile> list = new ArrayList<>();
 
-            ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
-                    .bucket(bucket)
-                    .prefix(path);
+            ListObjectsV2Request.Builder requestBuilder = null;
+            if(SimpleStringUtil.isNotEmpty(path)){
+                requestBuilder = ListObjectsV2Request.builder()
+                        .bucket(bucket)
+                        .prefix(path);
+            }
+            else{
+                requestBuilder = ListObjectsV2Request.builder()
+                        .bucket(bucket);
+            }
 
             if (!recursive) {
                 requestBuilder.delimiter("/");
             }
 
             ListObjectsV2Response response = s3Client.listObjectsV2(requestBuilder.build());
-
+            String dir = null;
             for (S3Object object : response.contents()) {
                 // 排除与目录本身同名的对象
-                if (object.key().equals(path)) continue;
+                if (path != null && object.key().equals(path)) continue;
 
                 OSSFile ossFile = new OSSFile();
-                ossFile.setObjectName(object.key());
+                String key = object.key();
+                ossFile.setObjectName(key);
+                ossFile.setBulket(bucket);
                 ossFile.setSize(object.size());
-                ossFile.setDir(object.key().endsWith("/")); // S3 没有真正的目录结构，通常以 / 结尾表示“伪目录”
-                ossFile.setResponseDate(Date.from(object.lastModified()));
+                boolean isDir = key.endsWith("/");
+                int index = key.lastIndexOf("/");
+                if(!isDir) {
+                   
+
+                    if (index != -1) {
+                        dir = key.substring(0, index);
+                    } else {
+                        dir = null;
+                    }
+                }
+                else{
+                    key = key.substring(0,index);
+                    index = key.lastIndexOf("/");
+                    if (index != -1) {
+                        dir = key.substring(0, index);
+                    } else {
+                        dir = null;
+                    }
+                }
+                ossFile.setParentDir(dir);
+                ossFile.setDir(isDir); // S3 没有真正的目录结构，通常以 / 结尾表示“伪目录”
+                ossFile.setLastModified(Date.from(object.lastModified()));
                 list.add(ossFile);
             }
 

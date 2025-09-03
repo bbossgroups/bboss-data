@@ -67,7 +67,7 @@ public class MilvusHelper {
         if(!milvusContainer.containsKey(milvusConfig.getName())){
             synchronized (milvusContainer){
                 if(!milvusContainer.containsKey(milvusConfig.getName())){
-                    ConnectConfig.ConnectConfigBuilder<?, ?> connectConfigBuilder = ConnectConfig.builder();
+                    ConnectConfig.ConnectConfigBuilder connectConfigBuilder = ConnectConfig.builder();
                     connectConfigBuilder
                             .uri(milvusConfig.getUri())
                             .token(milvusConfig.getToken()) // replace this with your token

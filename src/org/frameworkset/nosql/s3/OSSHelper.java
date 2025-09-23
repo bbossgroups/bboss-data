@@ -111,10 +111,8 @@ public class OSSHelper {
         Iterator iterator = stringObjectMap.keySet().iterator();;
         while (iterator.hasNext()){
             String name = (String)iterator.next();
-            OSSClient ossClient = ossClientConcurrentHashMap.get(name);
-            if(ossClient != null){
-                ((OSSClientImpl)ossClient).shutdown();
-            }
+            shutdown(name);
+           
         }
     }
 
@@ -122,6 +120,7 @@ public class OSSHelper {
         OSSClient ossClient = ossClientConcurrentHashMap.get(name);
         if(ossClient != null){
             ((OSSClientImpl)ossClient).shutdown();
+            ossClientConcurrentHashMap.remove(name);
         }
     }
     

@@ -2768,6 +2768,51 @@ public class RedisTool {
 		}
 	}
 
+    /**
+     * 获取分布式锁
+     * @param lockKey 锁的key
+     * @param lockValue 锁的值，用于标识锁的拥有者
+     * @param expireTime 过期时间(毫秒)
+     * @return 是否获取成功
+     */
+    public boolean tryLock(String lockKey, String lockValue, int expireTime) {
+
+        RedisHelper redisHelper = null;
+        try
+        {
+            redisHelper = RedisFactory.getRedisHelper(redisPoolName,init);
+            return redisHelper.tryLock(  lockKey,   lockValue,   expireTime) ;
+        }
+        finally
+        {
+            if(redisHelper != null)
+                redisHelper.release();
+        }
+        
+    }
+
+    /**
+     * 释放分布式锁
+     * @param lockKey 锁的key
+     * @param lockValue 锁的值
+     * @return 是否释放成功
+     */
+    public boolean releaseLock(String lockKey, String lockValue) {
+
+        RedisHelper redisHelper = null;
+        try
+        {
+            redisHelper = RedisFactory.getRedisHelper(redisPoolName,init);
+            return redisHelper.releaseLock(  lockKey,   lockValue) ;
+        }
+        finally
+        {
+            if(redisHelper != null)
+                redisHelper.release();
+        }
+         
+    }
+
 //	public Pipeline pipelined() {
 //		RedisHelper redisHelper = null;
 //		try
@@ -2785,4 +2830,6 @@ public class RedisTool {
 	public static void closePipeline(Pipeline pipeline){
 		RedisHelper.closePipeline(pipeline);
 	}
+    
+    
 }

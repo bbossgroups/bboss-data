@@ -7,6 +7,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.args.ListPosition;
+import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.params.SortingParams;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.params.ZIncrByParams;
@@ -30,6 +31,8 @@ public class RedisHelper {
 	}
 
 
+    private static final  String SCRIPT = "if redis.call('get', KEYS[1]) == ARGV[1] then " +
+            "return redis.call('del', KEYS[1]) else return 0 end";
 
 	private Jedis jedis;
 //	private ShardedJedis shardedJedis;
@@ -100,6 +103,56 @@ public class RedisHelper {
 		  else
 			return jc.set(key, value);
 	  }
+
+    /**
+     * 获取分布式锁
+     * @param lockKey 锁的key
+     * @param lockValue 锁的值，用于标识锁的拥有者
+     * @param expireTime 过期时间(毫秒)
+     * @return 是否获取成功
+     */
+    public boolean tryLock(String lockKey, String lockValue, int expireTime) {
+
+        init();
+        if(this.jedis != null) {
+            SetParams params = new SetParams().nx().px(expireTime);
+            String result = jedis.set(lockKey, lockValue, params);
+            return "OK".equals(result);
+        }
+        else {
+            SetParams params = new SetParams().nx().px(expireTime);
+            String result = jc.set(lockKey, lockValue, params);
+            return "OK".equals(result);
+        }
+           
+        
+         
+    }
+
+    /**
+     * 释放分布式锁
+     * @param lockKey 锁的key
+     * @param lockValue 锁的值
+     * @return 是否释放成功
+     */
+    public boolean releaseLock(String lockKey, String lockValue) {
+
+        init();
+        if(this.jedis != null) {
+            Object result = jedis.eval(SCRIPT,
+                    java.util.Collections.singletonList(lockKey),
+                    java.util.Collections.singletonList(lockValue));
+            return "1".equals(result.toString());
+        }
+        else {
+            Object result = jc.eval(SCRIPT,
+                    java.util.Collections.singletonList(lockKey),
+                    java.util.Collections.singletonList(lockValue));
+            return "1".equals(result.toString());
+        }
+        
+     
+    }
 
 //	  /**
 //	   * Set the string value as value of the key. The string can't be longer than 1073741824 bytes (1

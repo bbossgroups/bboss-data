@@ -84,7 +84,7 @@ public class MilvusHelper {
                     ConnectConfig connectConfig = connectConfigBuilder
                             .build();
 
-                    PoolConfig.PoolConfigBuilder<?, ?> poolConfigBuilder = PoolConfig.builder();
+                    PoolConfig.Builder poolConfigBuilder = PoolConfig.builder();
                     if(milvusConfig.getMaxIdlePerKey() != null)
                         poolConfigBuilder.maxIdlePerKey(milvusConfig.getMaxIdlePerKey() ); // max idle clients per key
                     if(milvusConfig.getMaxTotalPerKey() != null)

@@ -191,9 +191,9 @@ dependencies {
             [group: 'com.google.code.gson', name: 'gson', version: "2.13.1", transitive: false],
              
     )
-    compileOnly 'com.google.guava:guava:33.3.1-jre'
+    compileOnly 'com.google.guava:guava:33.5.0-jre'
     api group: 'commons-codec', name: 'commons-codec', version: '1.19.0'
-    compileOnly (group: 'io.minio', name: 'minio', version: '8.5.17'){
+    compileOnly (group: 'io.minio', name: 'minio', version: '8.6.0'){
         exclude group: 'com.fasterxml.jackson.jaxrs', module: 'jackson-jaxrs-json-provider'
         exclude group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-csv'
         exclude group: 'com.fasterxml.jackson.module', module: 'jackson-module-scala_2.12'
@@ -232,7 +232,7 @@ dependencies {
 
     api 'org.apache.httpcomponents:httpcore:4.4.16'
     // AWS依赖结束
-    compileOnly (group: 'io.milvus', name: 'milvus-sdk-java', version: '2.6.3'){
+    compileOnly (group: 'io.milvus', name: 'milvus-sdk-java', version: '2.6.7'){
         
         exclude group: 'com.google.guava', module: 'guava'
         exclude group: 'org.apache.commons', module: 'commons-pool2'

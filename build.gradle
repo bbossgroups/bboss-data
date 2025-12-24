@@ -185,14 +185,16 @@ dependencies {
 	testImplementation 'junit:junit:4.13.2'
 	 api (
 			[group: 'com.bbossgroups', name: 'bboss-core', version: "${BBOSS_VERSION}", transitive: true],
-            [group: 'org.apache.commons', name: 'commons-pool2', version: '2.12.1', transitive: false],
+            [group: 'org.apache.commons', name: 'commons-pool2', version: '2.13.0', transitive: false],
             [group: 'redis.clients', name: 'jedis', version: "${jedisversion}", transitive: false],
             [group: 'org.mongodb', name: 'mongodb-driver-sync', version: "${mongodbversion}", transitive: true],
-            [group: 'com.google.code.gson', name: 'gson', version: "2.13.1", transitive: false],
+            [group: 'com.google.code.gson', name: 'gson', version: "2.13.2", transitive: false],
              
     )
-    compileOnly 'com.google.guava:guava:33.5.0-jre'
+  
     api group: 'commons-codec', name: 'commons-codec', version: '1.19.0'
+    api 'org.apache.httpcomponents:httpcore:4.4.16'
+    compileOnly 'com.google.guava:guava:33.5.0-jre'
     compileOnly (group: 'io.minio', name: 'minio', version: '8.6.0'){
         exclude group: 'com.fasterxml.jackson.jaxrs', module: 'jackson-jaxrs-json-provider'
         exclude group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-csv'
@@ -230,12 +232,60 @@ dependencies {
         exclude group: 'org.apache.httpcomponents', module: 'httpcore'
     }
 
-    api 'org.apache.httpcomponents:httpcore:4.4.16'
+
     // AWS依赖结束
-    compileOnly (group: 'io.milvus', name: 'milvus-sdk-java', version: '2.6.7'){
+    compileOnly (group: 'io.milvus', name: 'milvus-sdk-java', version: '2.6.10'){
         
         exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'org.apache.commons', module: 'commons-pool2' 
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
+
+    testImplementation 'com.google.guava:guava:33.5.0-jre'
+    testImplementation (group: 'io.minio', name: 'minio', version: '8.6.0'){
+        exclude group: 'com.fasterxml.jackson.jaxrs', module: 'jackson-jaxrs-json-provider'
+        exclude group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-csv'
+        exclude group: 'com.fasterxml.jackson.module', module: 'jackson-module-scala_2.12'
+        exclude group: 'com.fasterxml.jackson.datatype', module: 'jackson-datatype-jdk8'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
+        exclude group: 'commons-codec', module: 'commons-codec'
+        exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+
+    }
+    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10'
+
+
+    // AWS依赖开始
+//    compileOnly platform("software.amazon.awssdk:bom:${s3version}")
+    testImplementation (group: 'software.amazon.awssdk', name: 's3',version:s3version)    {
+
+        exclude group: 'commons-codec', module: 'commons-codec'
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    testImplementation (group: 'software.amazon.awssdk', name: 'auth',version:s3version)    {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+        exclude group: 'commons-codec', module: 'commons-codec'
+    }
+    testImplementation (group: 'software.amazon.awssdk', name: 'regions',version:s3version)    {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+        exclude group: 'commons-codec', module: 'commons-codec'
+    }
+    testImplementation (group: 'software.amazon.awssdk', name: 'apache-client',version:s3version)
+            {
+                exclude group: 'org.slf4j', module: 'slf4j-api'
+                exclude group: 'commons-codec', module: 'commons-codec'
+                exclude group: 'org.apache.httpcomponents', module: 'httpcore'
+            }
+
+
+    // AWS依赖结束
+    testImplementation (group: 'io.milvus', name: 'milvus-sdk-java', version: '2.6.10'){
+
+        exclude group: 'com.google.guava', module: 'guava'
         exclude group: 'org.apache.commons', module: 'commons-pool2'
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
      
 }

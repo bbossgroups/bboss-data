@@ -17,6 +17,8 @@ package org.frameworkset.nosql.minio;
 
 import com.frameworkset.util.SimpleStringUtil;
 import io.minio.*;
+import io.minio.errors.*;
+import io.minio.http.Method;
 import io.minio.messages.Item;
 import okhttp3.Headers;
 import org.frameworkset.nosql.s3.DataOSSException;
@@ -27,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -285,7 +289,7 @@ public class Minio implements OSSClient {
                 .object(key)
                 .build()
         )) {
-            Headers headers = stream.headers();
+            okhttp3.Headers headers = stream.headers();
             ossObject.setContentType(headers.get("Content-Type"));
             ossObject.setKey(key);
             ossObject.setBucketName(bucket);
@@ -523,5 +527,68 @@ public class Minio implements OSSClient {
             logger.error("list path: {},bucket:{},minio[{}]", path,bucket,minioConfig.getName());
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
+    }
+
+    @Override
+    public String getInternalDownloadUrl(String bucket, String objectName, Integer expirySec, String endpoint) {
+        String url = null;
+        try {
+            url = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET) // 设置 HTTP 方法为 GET
+                            .bucket(bucket) // 替换为您的存储桶名称
+                            .object(objectName) // 替换为您要共享的对象名称
+                            .expiry(expirySec) // 设置 URL 有效期为 24 小时（以秒为单位）
+                            .build()
+            );
+            return url;
+        } catch (ErrorResponseException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (InsufficientDataException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (InternalException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (InvalidKeyException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (InvalidResponseException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (IOException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (XmlParserException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        } catch (ServerException e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        }catch (Exception e) {
+            logger.error("getInternalDownloadUrl bucket:{},objectName[objectName],minio[{}]", bucket,minioConfig.getName());
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",objectName:"+objectName),e);
+        }
+
+        
+    }
+
+    @Override
+    public String getExternalDownloadUrl(String bucket, String objectName, Integer expirySec, String endpoint) {
+        return getInternalDownloadUrl( bucket,  objectName,  expirySec,   endpoint);
+    }
+
+    @Override
+    public String getInternalDownloadUrl(String bucket,String objectName, Integer expirySec) {
+        return getInternalDownloadUrl(  bucket,objectName, expirySec, null);
+    }
+
+    @Override
+    public String getExternalDownloadUrl(String bucket,String objectName, Integer expirySec) {
+        return getInternalDownloadUrl(  bucket,objectName, expirySec, null);
     }
 }

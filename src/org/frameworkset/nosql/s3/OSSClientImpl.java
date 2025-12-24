@@ -16,15 +16,20 @@ package org.frameworkset.nosql.s3;
  */
 
 import com.frameworkset.util.SimpleStringUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -647,4 +652,103 @@ public class OSSClientImpl implements OSSClient {
             throw new DataOSSException(buildErrorInfo("bucket:"+bucket+",path:"+path),e);
         }
     }
+    @Override
+    public String getInternalDownloadUrl(String bucket,String objectName, Integer expirySec) {
+        return getSharedUrl(  bucket,objectName, expirySec, this.ossConfig.getEndpoint());
+    }
+
+    @Override
+    public String getExternalDownloadUrl(String bucket,String objectName, Integer expirySec) {
+        return getSharedUrl(  bucket,objectName, expirySec, this.ossConfig.getEndpoint());
+    }
+
+
+    @Override
+    public String getInternalDownloadUrl(String bucket,String objectName, Integer expirySec,String endpoint) {
+        return getSharedUrl(  bucket,objectName, expirySec, endpoint);
+    }
+
+    @Override
+    public String getExternalDownloadUrl(String bucket,String objectName, Integer expirySec,String endpoint) {
+        return getSharedUrl(  bucket,objectName, expirySec, endpoint);
+    }
+//    private String getSharedUrl(String bucket, String objectName, Integer expirySec, String customEndpoint) {
+//        logger.info("getSharedUrl, objectName={}", objectName);
+//        if (StringUtils.isBlank(objectName)) {
+//            throw new DataOSSException(buildErrorInfo("bucket:" + bucket + "customEndpoint:" + customEndpoint + ",objectName:" + objectName));
+//        }
+//    
+//        try {
+//            // 首先生成原始的预签名URL
+//            S3Presigner presigner = S3Presigner.builder()
+//                    .region(s3Client.serviceClientConfiguration().region())
+//                    .credentialsProvider(s3Client.serviceClientConfiguration().credentialsProvider())
+//                    .endpointOverride(URI.create(customEndpoint))  // 使用传入的 endpoint
+//                    .build();
+//    
+//            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+//                    .bucket(bucket)
+//                    .key(objectName)
+//                    .build();
+//    
+//            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+//                    .signatureDuration(Duration.ofSeconds(
+//                            expirySec != null ? expirySec : 10))
+//                    .getObjectRequest(getObjectRequest)
+//                    .build();
+//    
+//            String originalUrl = presigner.presignGetObject(presignRequest).url().toString();
+//            
+//            // 将原始URL进行URL编码，然后进行Base64编码
+//            String encodedUrl = java.net.URLEncoder.encode(originalUrl, "UTF-8");
+//            String base64EncodedUrl = java.util.Base64.getEncoder().encodeToString(encodedUrl.getBytes("UTF-8"));
+//            
+//            // 构建最终的共享链接
+//            String sharedUrl = customEndpoint + "/api/v1/download-shared-object/" + base64EncodedUrl;
+//            
+//            return sharedUrl;
+//        } catch (DataOSSException e) {
+//            logger.error("genDownloadUrl Exception !", e);
+//            throw e;
+//        } catch (Exception e) {
+//            logger.error("genDownloadUrl Exception !", e);
+//            throw new DataOSSException(buildErrorInfo("bucket:" + bucket + "customEndpoint:" + customEndpoint + ",objectName:" + objectName), e);
+//        }
+//    }
+
+    private String getSharedUrl(String bucket,String objectName, Integer expirySec, String customEndpoint) {
+        logger.info("getDownloadUrl, objectName={}", objectName);
+        if (StringUtils.isBlank(objectName)) {
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+"customEndpoint:"+customEndpoint+",objectName:"+objectName));
+        }
+
+        try {
+            // 创建 S3Presigner 实例，使用传入的 customEndpoint
+            S3Presigner presigner = S3Presigner.builder()
+                    .region(s3Client.serviceClientConfiguration().region())
+                    .credentialsProvider(s3Client.serviceClientConfiguration().credentialsProvider())
+                    .endpointOverride(URI.create(customEndpoint))  // 使用传入的 endpoint
+                    .build();
+
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(objectName)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofSeconds(
+                            expirySec != null ? expirySec : 10))
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            return presigner.presignGetObject(presignRequest).url().toString();
+        } catch (DataOSSException e) {
+            logger.error("genDownloadUrl Exception !", e);
+            throw e;
+        }catch (Exception e) {
+            logger.error("genDownloadUrl Exception !", e);
+            throw new DataOSSException(buildErrorInfo("bucket:"+bucket+"customEndpoint:"+customEndpoint+",objectName:"+objectName),e);
+        }
+    }
+
 }

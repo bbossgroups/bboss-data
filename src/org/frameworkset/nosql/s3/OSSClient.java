@@ -25,7 +25,7 @@ import java.util.List;
 public interface OSSClient {
  
 
-    public boolean createBucket(String bucket) throws Exception ;
+    boolean createBucket(String bucket) throws Exception ;
 
     /**
      * 上传文件
@@ -35,7 +35,7 @@ public interface OSSClient {
      * @param contentType
      * @return
      */
-    public String uploadObject(String file,String bucket, String key,String contentType) ;
+    String uploadObject(String file,String bucket, String key,String contentType) ;
     /**
      * 上传文件
      * @param file
@@ -44,14 +44,14 @@ public interface OSSClient {
      * @param contentType
      * @return
      */
-    public String uploadObject(String file,String bucket, String key,String contentType,long maxFilePartSize);
+    String uploadObject(String file,String bucket, String key,String contentType,long maxFilePartSize);
     /**
      * 上传文件
      * @param file
      * @param bucket
      * @return
      */
-    public String uploadObject(String file,String bucket,long maxFilePartSize) ;
+    String uploadObject(String file,String bucket,long maxFilePartSize) ;
 
     /**
      * 上传文件
@@ -59,16 +59,7 @@ public interface OSSClient {
      * @param bucket
      * @return
      */
-    public String uploadObject(String file,String bucket) ;
-
-    /**
-     * 上传文件
-     * @param file
-     * @param bucket
-     * @param key
-     * @return
-     */
-    public String uploadObject(String file,String bucket, String key) ;
+    String uploadObject(String file,String bucket) ;
 
     /**
      * 上传文件
@@ -77,7 +68,7 @@ public interface OSSClient {
      * @param key
      * @return
      */
-    public String uploadObject(File file, String bucket, String key) ;
+    String uploadObject(String file,String bucket, String key) ;
 
     /**
      * 上传文件
@@ -86,26 +77,35 @@ public interface OSSClient {
      * @param key
      * @return
      */
-    public String uploadObject(String file,String bucket, String key,long maxFilePartSize);
+    String uploadObject(File file, String bucket, String key) ;
 
-    public String saveOssFile(File file,String bucket, String key);
+    /**
+     * 上传文件
+     * @param file
+     * @param bucket
+     * @param key
+     * @return
+     */
+    String uploadObject(String file,String bucket, String key,long maxFilePartSize);
 
-    public String saveOssFile(File file, String bucket) ;
+    String saveOssFile(File file,String bucket, String key);
 
-    public String saveOssFile(byte[] bytes, String bucket,String id);
+    String saveOssFile(File file, String bucket) ;
 
-    public String saveOssFile(byte[] bytes,String bucket) ;
+    String saveOssFile(byte[] bytes, String bucket,String id);
 
-    public String saveOssFile(InputStream inputStream, long size, String bucket, String id);
+    String saveOssFile(byte[] bytes,String bucket) ;
 
-    public String saveOssFile(InputStream inputStream, long size, String bucket);
-    public OSSFileContent getOssFile(String bucket, String key) ;
+    String saveOssFile(InputStream inputStream, long size, String bucket, String id);
 
-    public InputStream getOssFileStream(String bucket,String key);
+    String saveOssFile(InputStream inputStream, long size, String bucket);
+    OSSFileContent getOssFile(String bucket, String key) ;
 
-    public void getOssFile(String bucket,String key, OutputStream out) ;
+    InputStream getOssFileStream(String bucket,String key);
 
-    public void getOssFile(String bucket,String key, File file) ;
+    void getOssFile(String bucket,String key, OutputStream out) ;
+
+    void getOssFile(String bucket,String key, File file) ;
 
     /**
      * 获取oss对象内容，并写入fileName对应的文件
@@ -113,7 +113,7 @@ public interface OSSClient {
      * @param key
      * @param fileName 保存的文件路径
      */
-    public void getOssFile(String bucket,String key, String fileName) ;
+    void getOssFile(String bucket,String key, String fileName) ;
 
     /**
      * 获取oss对象内容，并写入fileName对应的文件
@@ -121,26 +121,34 @@ public interface OSSClient {
      * @param key
      * @param fileName 保存的文件路径
      */
-    public void downloadObject(String bucket,String key, String fileName) ;
+    void downloadObject(String bucket,String key, String fileName) ;
 
 
 
-    public void deleteOssFile(String bucket,String key) ;
+    void deleteOssFile(String bucket,String key) ;
 
-    public String updateOssFile(String bucket,String key, byte[] bytes) ;
+    String updateOssFile(String bucket,String key, byte[] bytes) ;
 
-    public String updateOssFile(String bucket,String key, File file) ;
+    String updateOssFile(String bucket,String key, File file) ;
 
-    public String updateOssFile(String bucket,String key, InputStream inputStream,long size) ;
+    String updateOssFile(String bucket,String key, InputStream inputStream,long size) ;
 
 
-    public boolean exist(String bucket,String key) ;
+    boolean exist(String bucket,String key) ;
 
-    public boolean pathExist(String bucket,String path) ;
+    boolean pathExist(String bucket,String path) ;
 
-    public void createPath(String bucket,String path) ;
+    void createPath(String bucket,String path) ;
 
-    public List<OSSFile> listOssFile(String bucket, String path) ;
+    List<OSSFile> listOssFile(String bucket, String path) ;
 
-    public List<OSSFile> listOssFile(String bucket,String path,boolean recursive) ;
+    List<OSSFile> listOssFile(String bucket,String path,boolean recursive) ;
+
+    String getInternalDownloadUrl(String bucket,String objectName, Integer expirySec,String endpoint) ;
+
+    String getExternalDownloadUrl(String bucket,String objectName, Integer expirySec,String endpoint);
+
+    String getInternalDownloadUrl(String bucket,String objectName, Integer expirySec) ;
+
+    String getExternalDownloadUrl(String bucket,String objectName, Integer expirySec);
 }

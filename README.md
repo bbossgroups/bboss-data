@@ -10,11 +10,10 @@ https://esdoc.bbossgroups.com/#/bboss-build
  bboss data  project.
  包含的功能有：
 
- 1. Redis 工具包，支持多redis集群操作
- 
+ 1. Redis 工具包，支持多redis集群操作 
  2. Mongodb工具包，支持多mongodb集群操作
  3. Milvs工具包，支持多Milvus集群操作
- 4. Minio工具包，支持多Mino集群操作
+ 4. OSS/Minio工具包，基于S3协议，支持多OSS/Mino集群操作
 
 # 开发文档
 1. Redis 工具包，支持多redis集群操作
@@ -23,7 +22,15 @@ https://doc.bbossgroups.com/#/redis
 
 2. Mongodb 
 
-待补充...
+https://doc.bbossgroups.com/#/MongoDB
+
+3.Milvus
+
+https://doc.bbossgroups.com/#/Milvus
+
+4. OSS/Minio
+
+https://doc.bbossgroups.com/#/Minio
 
 # License
 

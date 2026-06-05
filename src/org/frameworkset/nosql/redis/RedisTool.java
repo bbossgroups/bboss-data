@@ -2790,6 +2790,28 @@ public class RedisTool {
         }
         
     }
+    /**
+     * 重试获取锁示例
+     * @param lockKey 锁的key
+     * @param lockValue 锁的值，用于标识锁的拥有者
+     * @param expireTime 过期时间(毫秒)
+     * @param retryTimes 重试次数
+     * @param retryInterval 重试间隔(毫秒) 大于0 起作用
+     * @return 是否获取成功
+     */
+    public boolean tryLockWithRetry(String lockKey, String lockValue, int expireTime, int retryTimes, long retryInterval)  {
+        RedisHelper redisHelper = null;
+        try
+        {
+            redisHelper = RedisFactory.getRedisHelper(redisPoolName,init);
+            return redisHelper.tryLockWithRetry(  lockKey,   lockValue,   expireTime,   retryTimes,   retryInterval) ;
+        }
+        finally
+        {
+            if(redisHelper != null)
+                redisHelper.release();
+        }
+    }
 
     /**
      * 释放分布式锁

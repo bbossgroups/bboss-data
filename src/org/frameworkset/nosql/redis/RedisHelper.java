@@ -2,10 +2,7 @@ package org.frameworkset.nosql.redis;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.ClusterPipeline;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPubSub;
-import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.*;
 import redis.clients.jedis.args.ListPosition;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.params.SortingParams;
@@ -327,7 +324,8 @@ public class RedisHelper {
 		  if(this.jedis != null)
 				return jedis.keys(  pattern) ;
 		  else
-			  throw new java.lang.UnsupportedOperationException("Jedis cluster Unsupport   keys pattern mehtod.");
+			  	return jc.keys(  pattern) ;
+			  
 	  }
 
 	  /**
@@ -343,7 +341,8 @@ public class RedisHelper {
 		  if(this.jedis != null)
 				return jedis.randomKey();
 		  else
-			  throw new java.lang.UnsupportedOperationException("Jedis cluster Unsupport   randomKey mehtod.");
+			  	return jc.randomKey();
+			  
 	  }
 
 //	  /**
@@ -2762,8 +2761,8 @@ public class RedisHelper {
 		  if(this.jedis != null)
 				return jedis.echo( string)  ;
 		  else {
-		  	 throw new IllegalArgumentException("jedis cluster not support echo command.");
-//			  return jc.echo(string);
+			  
+			  return jc.echo(string);
 		  }
 	  }
 
@@ -2939,7 +2938,7 @@ public class RedisHelper {
 		  if(this.jedis != null)
 				  jedis.subscribe(  jedisPubSub,   channels) ;
 		  else{
-			  throw new java.lang.UnsupportedOperationException("  Jedis Cluster Unsupport   subscribe mehtod.");
+			  jc.subscribe(  jedisPubSub,   channels) ;
 		  }
 //			    jc.subscribe(  jedisPubSub,   channels) ;
 	  }
@@ -2958,291 +2957,13 @@ public class RedisHelper {
 		  if(this.jedis != null)
 				    jedis.psubscribe( jedisPubSub, patterns) ;
 		  else{
-			  throw new java.lang.UnsupportedOperationException("  Jedis Cluster Unsupport   psubscribe mehtod.");
+			  jc.psubscribe( jedisPubSub, patterns) ;
 		  }
 //			    jc.psubscribe( jedisPubSub, patterns) ;
 	  }
 
 	 
 
-	  
-	   
-
-	  
-
-	 
-
-//	  @Override
-//	  public Object evalsha(String sha1, List<String> keys, List<String> args) {
-//	    return evalsha(sha1, keys.size(), getParams(keys, args));
-//	  }
-//
-//	  @Override
-//	  public Object evalsha(String sha1, int keyCount, String... params) {
-//	    checkIsInMultiOrPipeline();
-//	    client.evalsha(sha1, keyCount, params);
-//	    return getEvalResult();
-//	  }
-//
-//	  @Override
-//	  public Boolean scriptExists(String sha1) {
-//	    String[] a = new String[1];
-//	    a[0] = sha1;
-//	    return scriptExists(a).get(0);
-//	  }
-//
-//	  @Override
-//	  public List<Boolean> scriptExists(String... sha1) {
-//	    client.scriptExists(sha1);
-//	    List<Long> result = client.getIntegerMultiBulkReply();
-//	    List<Boolean> exists = new ArrayList<Boolean>();
-//
-//	    for (Long value : result)
-//	      exists.add(value == 1);
-//
-//	    return exists;
-//	  }
-//
-//	  @Override
-//	  public String scriptLoad(String script) {
-//	    client.scriptLoad(script);
-//	    return client.getBulkReply();
-//	  }
-
-//	  public List<Slowlog> slowlogGet() {
-//		  if(shardedJedis != null)
-//		  {
-//			  
-//			  throw new java.lang.UnsupportedOperationException("  shared Jedis  Unsupport   publish  mehtod.");
-//			  
-//		  }
-//		  else if(this.jedis != null)
-//				return   jedis.slowlogGet() ;
-//		  else
-//			  return   jc.slowlogGet() ;
-//	  }
-//
-//	  @Override
-//	  public List<Slowlog> slowlogGet(long entries) {
-//	    client.slowlogGet(entries);
-//	    return Slowlog.from(client.getObjectMultiBulkReply());
-//	  }
-
-//	  public Long objectRefcount(String string) {
-//		  if(shardedJedis != null)
-//		  {
-//			  
-//			  throw new java.lang.UnsupportedOperationException("  shared Jedis  Unsupport   publish  mehtod.");
-//			  
-//		  }
-//		  else if(this.jedis != null)
-//				return   jedis.objectRefcount(  string) ;
-//		  else
-//			  return   jc.objectRefcount(  string) ;
-//	  }
-//
-//	  @Override
-//	  public String objectEncoding(String string) {
-//	    client.objectEncoding(string);
-//	    return client.getBulkReply();
-//	  }
-//
-//	  @Override
-//	  public Long objectIdletime(String string) {
-//	    client.objectIdletime(string);
-//	    return client.getIntegerReply();
-//	  }
-//
-//	  @Override
-//	  public Long bitcount(final String key) {
-//	    client.bitcount(key);
-//	    return client.getIntegerReply();
-//	  }
-//
-//	  @Override
-//	  public Long bitcount(final String key, long start, long end) {
-//	    client.bitcount(key, start, end);
-//	    return client.getIntegerReply();
-//	  }
-//
-//	  @Override
-//	  public Long bitop(BitOP op, final String destKey, String... srcKeys) {
-//	    client.bitop(op, destKey, srcKeys);
-//	    return client.getIntegerReply();
-//	  }
-
-	  /**
-	   * <pre>
-	   * redis 127.0.0.1:26381&gt; sentinel masters
-	   * 1)  1) "name"
-	   *     2) "mymaster"
-	   *     3) "ip"
-	   *     4) "127.0.0.1"
-	   *     5) "port"
-	   *     6) "6379"
-	   *     7) "runid"
-	   *     8) "93d4d4e6e9c06d0eea36e27f31924ac26576081d"
-	   *     9) "flags"
-	   *    10) "master"
-	   *    11) "pending-commands"
-	   *    12) "0"
-	   *    13) "last-ok-ping-reply"
-	   *    14) "423"
-	   *    15) "last-ping-reply"
-	   *    16) "423"
-	   *    17) "info-refresh"
-	   *    18) "6107"
-	   *    19) "num-slaves"
-	   *    20) "1"
-	   *    21) "num-other-sentinels"
-	   *    22) "2"
-	   *    23) "quorum"
-	   *    24) "2"
-	   * 
-	   * </pre>
-	   * @return
-	   */
-//	  @Override
-//	  @SuppressWarnings("rawtypes")
-//	  public List<Map<String, String>> sentinelMasters() {
-//	    client.sentinel(Protocol.SENTINEL_MASTERS);
-//	    final List<Object> reply = client.getObjectMultiBulkReply();
-//
-//	    final List<Map<String, String>> masters = new ArrayList<Map<String, String>>();
-//	    for (Object obj : reply) {
-//	      masters.add(BuilderFactory.STRING_MAP.build((List) obj));
-//	    }
-//	    return masters;
-//	  }
-//
-//	  /**
-//	   * <pre>
-//	   * redis 127.0.0.1:26381&gt; sentinel get-master-addr-by-name mymaster
-//	   * 1) "127.0.0.1"
-//	   * 2) "6379"
-//	   * </pre>
-//	   * @param masterName
-//	   * @return two elements list of strings : host and port.
-//	   */
-//	  @Override
-//	  public List<String> sentinelGetMasterAddrByName(String masterName) {
-//	    client.sentinel(Protocol.SENTINEL_GET_MASTER_ADDR_BY_NAME, masterName);
-//	    final List<Object> reply = client.getObjectMultiBulkReply();
-//	    return BuilderFactory.STRING_LIST.build(reply);
-//	  }
-//
-//	  /**
-//	   * <pre>
-//	   * redis 127.0.0.1:26381&gt; sentinel reset mymaster
-//	   * (integer) 1
-//	   * </pre>
-//	   * @param pattern
-//	   * @return
-//	   */
-//	  @Override
-//	  public Long sentinelReset(String pattern) {
-//	    client.sentinel(Protocol.SENTINEL_RESET, pattern);
-//	    return client.getIntegerReply();
-//	  }
-//
-//	  /**
-//	   * <pre>
-//	   * redis 127.0.0.1:26381&gt; sentinel slaves mymaster
-//	   * 1)  1) "name"
-//	   *     2) "127.0.0.1:6380"
-//	   *     3) "ip"
-//	   *     4) "127.0.0.1"
-//	   *     5) "port"
-//	   *     6) "6380"
-//	   *     7) "runid"
-//	   *     8) "d7f6c0ca7572df9d2f33713df0dbf8c72da7c039"
-//	   *     9) "flags"
-//	   *    10) "slave"
-//	   *    11) "pending-commands"
-//	   *    12) "0"
-//	   *    13) "last-ok-ping-reply"
-//	   *    14) "47"
-//	   *    15) "last-ping-reply"
-//	   *    16) "47"
-//	   *    17) "info-refresh"
-//	   *    18) "657"
-//	   *    19) "master-link-down-time"
-//	   *    20) "0"
-//	   *    21) "master-link-status"
-//	   *    22) "ok"
-//	   *    23) "master-host"
-//	   *    24) "localhost"
-//	   *    25) "master-port"
-//	   *    26) "6379"
-//	   *    27) "slave-priority"
-//	   *    28) "100"
-//	   * </pre>
-//	   * @param masterName
-//	   * @return
-//	   */
-//	  @Override
-//	  @SuppressWarnings("rawtypes")
-//	  public List<Map<String, String>> sentinelSlaves(String masterName) {
-//	    client.sentinel(Protocol.SENTINEL_SLAVES, masterName);
-//	    final List<Object> reply = client.getObjectMultiBulkReply();
-//
-//	    final List<Map<String, String>> slaves = new ArrayList<Map<String, String>>();
-//	    for (Object obj : reply) {
-//	      slaves.add(BuilderFactory.STRING_MAP.build((List) obj));
-//	    }
-//	    return slaves;
-//	  }
-//
-//	  @Override
-//	  public String sentinelFailover(String masterName) {
-//	    client.sentinel(Protocol.SENTINEL_FAILOVER, masterName);
-//	    return client.getStatusCodeReply();
-//	  }
-//
-//	  @Override
-//	  public String sentinelMonitor(String masterName, String ip, int port, int quorum) {
-//	    client.sentinel(Protocol.SENTINEL_MONITOR, masterName, ip, String.valueOf(port),
-//	      String.valueOf(quorum));
-//	    return client.getStatusCodeReply();
-//	  }
-//
-//	  @Override
-//	  public String sentinelRemove(String masterName) {
-//	    client.sentinel(Protocol.SENTINEL_REMOVE, masterName);
-//	    return client.getStatusCodeReply();
-//	  }
-//
-//	  @Override
-//	  public String sentinelSet(String masterName, Map<String, String> parameterMap) {
-//	    int index = 0;
-//	    int paramsLength = parameterMap.size() * 2 + 2;
-//	    String[] params = new String[paramsLength];
-//
-//	    params[index++] = Protocol.SENTINEL_SET;
-//	    params[index++] = masterName;
-//	    for (Entry<String, String> entry : parameterMap.entrySet()) {
-//	      params[index++] = entry.getKey();
-//	      params[index++] = entry.getValue();
-//	    }
-//
-//	    client.sentinel(params);
-//	    return client.getStatusCodeReply();
-//	  }
-//
-//	  public byte[] dump(final String key) {
-//	    checkIsInMultiOrPipeline();
-//	    client.dump(key);
-//	    return client.getBinaryBulkReply();
-//	  }
-
-//	  public String restore(final String key, final int ttl, final byte[] serializedValue) {
-//		  if(shardedJedis != null)
-//				return shardedJedis.restore(  key,   ttl,   serializedValue)   ;
-//		  else if(this.jedis != null)
-//				return jedis.restore(  key,   ttl,   serializedValue)   ;
-//		  else
-//			  	return jc.restore(  key,   ttl,   serializedValue)   ;
-//	  }
 
 	  public Long pexpire(final String key, final long milliseconds) {
 		  init();
@@ -3265,7 +2986,7 @@ public class RedisHelper {
 		  if(this.jedis != null)
 				return jedis.pttl(  key);
 		  else
-			  throw new java.lang.UnsupportedOperationException("  Cluster Jedis  Unsupport   pttl  mehtod.");
+			  	return jc.pttl(  key);
 	  }
 
 	  /**
@@ -3282,7 +3003,7 @@ public class RedisHelper {
 		  if(this.jedis != null)
 				return jedis.psetex(  key,   milliseconds,   value) ;
 		  else
-			  throw new java.lang.UnsupportedOperationException("  Cluster Jedis  Unsupport   psetex  mehtod.");
+			  	return jc.psetex(  key,   milliseconds,   value) ;
 	  }
 
 //	  public String clientKill(final String client) {
@@ -3688,8 +3409,8 @@ public class RedisHelper {
 //	    client.georadiusByMember(key, member, radius, unit, param);
 //	    return BuilderFactory.GEORADIUS_WITH_PARAMS_RESULT.build(client.getObjectMultiBulkReply());
 //	  }
-		private Pipeline pipeline;
-	  public Pipeline pipelined() {
+		private PipeliningBase pipeline;
+	  public PipeliningBase pipelined() {
 		  init();
 		  if(pipeline != null)
 		  		return pipeline;
@@ -3698,9 +3419,9 @@ public class RedisHelper {
 			  return pipeline;
 		  }
 		  else {
-
-
-			  throw new java.lang.UnsupportedOperationException("  Cluster Jedis  Unsupport   pipelined  mehtod.");
+			  
+			  pipeline = jc.pipelined();
+			  return pipeline;
 		  }
 
 
@@ -3741,10 +3462,14 @@ public class RedisHelper {
 			logger.error("close pipeline failed:",e);
 		}
 	}
-	public static void closePipeline(Pipeline pipeline){
+	public static void closePipeline(PipeliningBase pipeline){
 		try {
-			if(pipeline != null)
-				pipeline.close();
+			if(pipeline != null) {
+				if(pipeline instanceof Pipeline)
+					((Pipeline)pipeline).close();
+				else if(pipeline instanceof ClusterPipeline)
+					((ClusterPipeline)pipeline).close();
+			}
 		}
 		catch (Exception e){
 			logger.error("close pipeline failed:",e);
